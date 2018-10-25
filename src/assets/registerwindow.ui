@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>176</width>
+    <height>145</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="3" column="3">
+    <widget class="QLabel" name="m_lblR7">
+     <property name="text">
+      <string>R7</string>
+     </property>
+     <property name="buddy">
+      <cstring>m_pReg7</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="QLabel" name="m_lblR3">
+     <property name="text">
+      <string>R3</string>
+     </property>
+     <property name="buddy">
+      <cstring>m_pReg3</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="3">
+    <widget class="QLabel" name="m_lblR4">
+     <property name="text">
+      <string>R4</string>
+     </property>
+     <property name="buddy">
+      <cstring>m_pReg4</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QLineEdit" name="m_pReg1"/>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="m_lblR0">
+     <property name="text">
+      <string>R0</string>
+     </property>
+     <property name="buddy">
+      <cstring>m_pReg0</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="QLabel" name="m_lblR2">
+     <property name="text">
+      <string>R2</string>
+     </property>
+     <property name="buddy">
+      <cstring>m_pReg2</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="4">
+    <widget class="QLineEdit" name="m_pReg6"/>
+   </item>
+   <item row="0" column="1">
+    <widget class="QLineEdit" name="m_pReg0"/>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="m_lblR1">
+     <property name="text">
+      <string>R1</string>
+     </property>
+     <property name="buddy">
+      <cstring>m_pReg1</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="4">
+    <widget class="QLineEdit" name="m_pReg5"/>
+   </item>
+   <item row="2" column="3">
+    <widget class="QLabel" name="m_lblR6">
+     <property name="text">
+      <string>R6</string>
+     </property>
+     <property name="buddy">
+      <cstring>m_pReg6</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="3">
+    <widget class="QLabel" name="m_lblR5">
+     <property name="text">
+      <string>R5</string>
+     </property>
+     <property name="buddy">
+      <cstring>m_pReg5</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QLineEdit" name="m_pReg2"/>
+   </item>
+   <item row="0" column="4">
+    <widget class="QLineEdit" name="m_pReg4"/>
+   </item>
+   <item row="3" column="1">
+    <widget class="QLineEdit" name="m_pReg3"/>
+   </item>
+   <item row="3" column="4">
+    <widget class="QLineEdit" name="m_pReg7"/>
+   </item>
+   <item row="1" column="2">
+    <spacer name="m_pSpacer">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>40</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="4" column="0" colspan="5">
+    <widget class="QPushButton" name="m_pSubmit">
+     <property name="text">
+      <string>Set this state</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
