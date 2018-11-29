@@ -66,7 +66,7 @@
       <OutputFile>$(OutDir)\$(ProjectName).exe</OutputFile>
       <AdditionalLibraryDirectories>$(QTDIR)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>qtmaind.lib;Qt5Cored.lib;Qt5Guid.lib;Qt5Widgetsd.lib;$(outdir)cpu.lib;$(outdir)console.lib;$(outdir)assets.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>qtmaind.lib;Qt5Cored.lib;Qt5Guid.lib;Qt5Widgetsd.lib;$(outdir)cpu.lib;$(outdir)assets.lib;$(outdir)debugger.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <QtMoc>
       <OutputFile>.\GeneratedFiles\$(ConfigurationName)\moc_%(Filename).cpp</OutputFile>
@@ -128,14 +128,11 @@
     <ProjectReference Include="..\assets\assets.vcxproj">
       <Project>{13421d7c-0894-41b8-899f-7480195bd43c}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\console\console.vcxproj">
-      <Project>{3e599e0a-e5a3-4fc4-a8e6-3a6e1d7d9a02}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\core\core.vcxproj">
-      <Project>{5fdb6aa6-a493-4961-80c1-0618d0e9e07b}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\cpu\cpu.vcxproj">
       <Project>{5f87cf09-f9da-4284-ab54-f72149f34b84}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\debugger\debugger.vcxproj">
+      <Project>{7d607ca3-8a9e-4cc3-aec5-7bd8584bf99f}</Project>
     </ProjectReference>
     <ProjectReference Include="..\ram\ram.vcxproj">
       <Project>{5ef3e967-2dcb-4f2f-b6a0-78ebef746214}</Project>

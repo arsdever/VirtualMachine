@@ -29,30 +29,12 @@
     <ClCompile Include="cpu.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="cpu_mgr.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="cpu_state.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="register.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="executer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="cpu.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="cpu_state.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="register.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="executer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -62,7 +44,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <QtMoc Include="cpu_mgr.h">
+    <QtMoc Include="cpu.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

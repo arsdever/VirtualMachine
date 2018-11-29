@@ -1,9 +1,12 @@
 #pragma once
 
 #include <QMainWindow>
+#include <ram>
+#include <cpu>
+#include "../debugger/debugger.h"
 
-class QLineEdit;
-class QPushButton;
+class CCPU;
+class CDebugger;
 
 class VirtualMachine : public QMainWindow
 {
@@ -12,12 +15,8 @@ class VirtualMachine : public QMainWindow
 public:
 	VirtualMachine(QWidget *parent = Q_NULLPTR);
 	~VirtualMachine() {};
-
-
-public slots:
-	void ProcessCommand();
-
+	
 private:
-	QLineEdit* pCLI;
-	QPushButton* pButton;
+	CCPU m_cCPU;
+	CDebugger m_cDebugger;
 };

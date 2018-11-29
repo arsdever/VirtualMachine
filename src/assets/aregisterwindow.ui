@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ARegWindow</class>
+ <widget class="QWidget" name="ARegWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>94</width>
+    <height>251</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="3" column="0">
+    <widget class="QLabel" name="m_lblA3">
+     <property name="text">
+      <string>DI</string>
+     </property>
+     <property name="buddy">
+      <cstring>m_pAReg3</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QLineEdit" name="m_pAReg1"/>
+   </item>
+   <item row="2" column="1">
+    <widget class="QLineEdit" name="m_pAReg2"/>
+   </item>
+   <item row="3" column="1">
+    <widget class="QLineEdit" name="m_pAReg3"/>
+   </item>
+   <item row="4" column="1">
+    <widget class="QLineEdit" name="m_pAReg4"/>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="m_lblA1">
+     <property name="text">
+      <string>A1</string>
+     </property>
+     <property name="buddy">
+      <cstring>m_pAReg1</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QLineEdit" name="m_pAReg0"/>
+   </item>
+   <item row="2" column="0">
+    <widget class="QLabel" name="m_lblA2">
+     <property name="text">
+      <string>SI</string>
+     </property>
+     <property name="buddy">
+      <cstring>m_pAReg2</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="0">
+    <widget class="QLabel" name="m_lblA4">
+     <property name="text">
+      <string>SF</string>
+     </property>
+     <property name="buddy">
+      <cstring>m_pAReg2</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="1">
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>2</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="m_lblA0">
+     <property name="text">
+      <string>A0</string>
+     </property>
+     <property name="buddy">
+      <cstring>m_pAReg0</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="7" column="1">
+    <widget class="QLineEdit" name="m_pARegIP"/>
+   </item>
+   <item row="5" column="0">
+    <widget class="QLabel" name="m_lblA5">
+     <property name="text">
+      <string>SP</string>
+     </property>
+     <property name="buddy">
+      <cstring>m_pAReg3</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="5" column="1">
+    <widget class="QLineEdit" name="m_pAReg5"/>
+   </item>
+   <item row="7" column="0">
+    <widget class="QLabel" name="m_lblAIP">
+     <property name="text">
+      <string>IP</string>
+     </property>
+     <property name="buddy">
+      <cstring>m_pAReg3</cstring>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

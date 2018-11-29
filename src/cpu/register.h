@@ -2,6 +2,7 @@
 
 #include "cpu_global.h"
 #include <QByteArray>
+#include <exception>
 
 class CPU_EXPORT CRegisterSet
 {
@@ -13,7 +14,7 @@ public:
 	void SetValue(int address, T value)
 	{
 		if (address + sizeof(T) > m_aBuffer.size())
-			return;
+			throw invalid_cast_exception();
 
 		char* data = m_aBuffer.data();
 		T* dest = (T*)(data + address);
@@ -24,7 +25,7 @@ public:
 	T GetValue(int address) const
 	{
 		if (address + sizeof(T) > m_aBuffer.size())
-			return 0;
+			throw invalid_cast_exception();
 
 		const char* data = m_aBuffer.data();
 		T* dest = (T*)(data + address);
@@ -33,5 +34,9 @@ public:
 
 private:
 	QByteArray m_aBuffer;
+
+public:
+	class register_exception : public std::exception {};
+	class invalid_cast_exception : public register_exception {};
 };
 

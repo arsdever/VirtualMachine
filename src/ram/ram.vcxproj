@@ -65,7 +65,7 @@
       <OutputFile>$(OutDir)\$(ProjectName).dll</OutputFile>
       <AdditionalLibraryDirectories>$(QTDIR)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>qtmaind.lib;Qt5Cored.lib;$(outdir)plugin.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>qtmaind.lib;Qt5Cored.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <QtMoc>
       <Define>UNICODE;_UNICODE;WIN32;WIN64;QT_CORE_LIB;RAM_LIB;%(PreprocessorDefinitions)</Define>
@@ -103,11 +103,6 @@
   <ItemGroup>
     <QtMoc Include="ram.h" />
     <ClInclude Include="ram_global.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\plugin\plugin.vcxproj">
-      <Project>{ae3a7929-5e55-4276-858c-b14ec7bf3cfb}</Project>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Condition="Exists('$(QtMsBuild)\qt.targets')">

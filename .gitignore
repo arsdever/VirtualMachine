@@ -3,6 +3,12 @@ build
 .vs
 .ssh*
 .gitattributes
+
+#TO BE REMOVED
+ASM2BYTE.sln
+src/asm2byte
+#--------------
+
 # Created by https://www.gitignore.io/api/qt
 
 ### Qt ###

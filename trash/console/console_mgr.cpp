@@ -11,7 +11,7 @@ CConsoleManager::~CConsoleManager()
 {
 }
 
-void CConsoleManager::PrintInfoMessage(QString const& msg)
+void CConsoleManager::PrintMessage(QString const& msg)
 {
 	for (auto it : m_lstPlugins)
 	{
@@ -24,7 +24,7 @@ void CConsoleManager::PrintInfoMessage(QString const& msg)
 	}
 }
 
-void CConsoleManager::PrintWarningMessage(QString const& msg)
+void CConsoleManager::PrintWarning(QString const& msg)
 {
 	for (auto it : m_lstPlugins)
 	{
@@ -37,7 +37,7 @@ void CConsoleManager::PrintWarningMessage(QString const& msg)
 	}
 }
 
-void CConsoleManager::PrintErrorMessage(QString const& msg)
+void CConsoleManager::PrintError(QString const& msg)
 {
 	for (auto it : m_lstPlugins)
 	{
@@ -48,4 +48,9 @@ void CConsoleManager::PrintErrorMessage(QString const& msg)
 
 		pConsole->PrintError(msg);
 	}
+}
+
+void CConsoleManager::GetInput(QString const&)
+{
+
 }

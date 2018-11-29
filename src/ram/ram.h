@@ -1,30 +1,39 @@
 #pragma once
 
 #include "ram_global.h"
-#include <pluginmgr>
+#include <QObject>
+#include <QByteArray>
+#include <exception>
 
-class QByteArray;
-
-class RAM_EXPORT CRAMManager : public CPluginManager
+class RAM_EXPORT CRAM : public QObject
 {
 
 	Q_OBJECT
 
 public:
-	CRAMManager();
-	~CRAMManager();
+	CRAM(quint32 nSize = 0xffff);
+	~CRAM();
 
-	CRAMManager& WriteMemory(unsigned int address, int data);
-	CRAMManager& WriteMemory(unsigned int address, QByteArray const& data);
-	CRAMManager& WriteMemory(unsigned int address, const char* data, unsigned int size);
+	template <typename INT_TYPE>
+	INT_TYPE& operator[](qint32 address)
+	{
+		if (address + sizeof(INT_TYPE) > m_nSize)
+		{
+			throw index_out_of_bounds_exception();
+		}
 
-	CRAMManager& ReadMemory(unsigned int address, int& data);
-	CRAMManager& ReadMemory(unsigned int address, QByteArray& buffer);
-	CRAMManager& ReadMemory(unsigned int address, char* data, unsigned int size);
+		return (INT_TYPE&)(((quint8*)(m_pMemory))[address]);
+	}
 
-	operator bool() { return m_bOk; }
+	quint32 GetSize() const { return m_nSize; }
 
 private:
-	QByteArray* m_pMemory;
-	bool m_bOk;
+	quint32 m_nSize;
+	quint8* m_pMemory;
+	static CRAM* pinstance;
+
+public:
+	static CRAM* instance();
+	struct ram_exception : std::exception {};
+	struct index_out_of_bounds_exception : ram_exception {};
 };

@@ -34,12 +34,12 @@
     <ClCompile Include="assets.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="memory_changer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="assets_global.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="ui_registerwindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -47,9 +47,15 @@
     <QtMoc Include="assets.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="memory_changer.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <QtUic Include="registerwindow.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtUic Include="aregisterwindow.ui">
       <Filter>Form Files</Filter>
     </QtUic>
   </ItemGroup>

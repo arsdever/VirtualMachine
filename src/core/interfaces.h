@@ -1,37 +1,27 @@
 #pragma once
 
-#include "core_global.h"
+#include "core.h"
 #include <QString>
-
-class CRegisterSet;
 
 class CORE_EXPORT IUnknown
 {
 public:
+	virtual QString const& GetUUID() = 0;
+	virtual ~IUnknown() = 0;
+};
+
+class CORE_EXPORT IRAM : public IUnknown
+{
+public:
 	static const QString UUID;
-	virtual ~IUnknown();
+	virtual QString const& GetUUID() { return UUID; }
 };
 
-class CORE_EXPORT ICPU : public IUnknown
+class CORE_EXPORT IDebugger : public IUnknown
 {
 public:
-	virtual void Fetch() = 0;
-	virtual void Decode() = 0;
-	virtual void Execute() = 0;
-	//virtual void UpdateRegisters(CRegisterSet const&) = 0;
-	//virtual CRegisterSet GetRegisters() const = 0;
-};
+	static const QString UUID;
+	virtual QString const& GetUUID() { return UUID; }
 
-class CORE_EXPORT IRegister : public IUnknown
-{
-public:
-};
-
-class CORE_EXPORT IConsole : public IUnknown
-{
-public:
-	virtual void PrintMessage(QString const&) = 0;
-	virtual void PrintError(QString const&) = 0;
-	virtual void PrintWarning(QString const&) = 0;
-	virtual void GetInput(QString const&) = 0;
+	virtual void HandleBreakpoint() = 0;
 };

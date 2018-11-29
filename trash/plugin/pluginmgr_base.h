@@ -30,6 +30,8 @@ public:
 		return nullptr;
 	}*/
 
+	virtual QString GetName() const = 0;
+
 signals:
 	void SigUpdate();
 
