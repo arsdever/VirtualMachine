@@ -42,6 +42,7 @@ CDebugger::CDebugger()
 	connect(showMemory, SIGNAL(clicked()), this, SLOT(ShowMemory()));
 	connect(gprButton, SIGNAL(clicked()), this, SLOT(ToggleRegisters()));
 	connect(arButton, SIGNAL(clicked()), this, SLOT(ToggleARegisters()));
+	connect(m_pRegView, SIGNAL(ChangeRegister(quint8, quint32)), this, SLOT(SetRegisterValue(quint8, quint32)));
 }
 
 void CDebugger::UpdateInformation()
@@ -72,6 +73,11 @@ void CDebugger::UpdateMemory()
 	}
 	m_pMemory->setText(text);
 	m_pMemory->setWordWrapMode(QTextOption::NoWrap);
+}
+
+void CDebugger::SetRegisterValue(quint8 regNum, quint32 regValue)
+{
+	(quint32&)m_pProcess->m_sState.GR[regNum] = regValue;
 }
 
 void CDebugger::HandleBreakpoint()
@@ -125,7 +131,7 @@ void CDebugger::ShowMemory()
 
 void CDebugger::Step()
 {
-	quint32 size = CCPU::s_mapInstructions[m_pProcess->m_sState.PC].first;
+	quint32 size = CCPU::s_mapInstructions[CRAM::instance()->operator[]<quint8>(m_pProcess->m_sState.PC)].first;
 	quint32 pos = m_pProcess->GetState().PC + size;
 	SetBreakpoint(pos);
 
@@ -197,7 +203,7 @@ void CDebugger::SetBreakpoint(quint32 nPosition)
 {
 	CRAM* pRam = CRAM::instance();
 	m_mapBreakpoints[nPosition] = CRAM::instance()->operator[]<quint8>(nPosition);
-	pRam->operator[]<quint8>(nPosition) = 0x02;
+	pRam->operator[]<quint8>(nPosition) = CCPU::InstructionCode::BRK;
 
 	QString bpList = "";
 	QList<quint32> lst = m_mapBreakpoints.keys();
@@ -223,7 +229,7 @@ void CDebugger::LoadBreakpoints(QString const& path)
 	QByteArray data = bps.readAll();
 	for (quint32 i = 0; i < data.size() / 4; ++i)
 	{
-		quint32 pos = (quint32)data[i * 4];
+		quint32 pos = *(quint32*)(data.data() + i * 4);
 		SetBreakpoint(pos);
 	}
 }

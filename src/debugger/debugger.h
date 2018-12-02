@@ -34,6 +34,7 @@ public slots:
 	void SetBreakpoint();
 	void SetMemory();
 	void ShowMemory();
+	void SetRegisterValue(quint8, quint32);
 
 	void ToggleRegisters();
 	void ToggleARegisters();

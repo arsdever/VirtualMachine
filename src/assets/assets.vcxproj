@@ -65,7 +65,7 @@
       <OutputFile>$(OutDir)\$(ProjectName).dll</OutputFile>
       <AdditionalLibraryDirectories>$(QTDIR)\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>qtmaind.lib;Qt5Cored.lib;Qt5Guid.lib;Qt5Widgetsd.lib;$(outdir)cpu.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>qtmaind.lib;Qt5Cored.lib;Qt5Guid.lib;Qt5Widgetsd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <QtMoc>
       <Define>UNICODE;_UNICODE;WIN32;WIN64;QT_CORE_LIB;ASSETS_LIB;QT_GUI_LIB;QT_WIDGETS_LIB;_WINDLL</Define>
@@ -107,9 +107,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="assets.cpp" />
+    <ClCompile Include="disassembler.cpp" />
     <ClCompile Include="memory_changer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="disassembler.h" />
     <QtMoc Include="memory_changer.h" />
     <QtMoc Include="assets.h" />
     <ClInclude Include="assets_global.h" />
@@ -121,6 +123,9 @@
   <ItemGroup>
     <ProjectReference Include="..\cpu\cpu.vcxproj">
       <Project>{5f87cf09-f9da-4284-ab54-f72149f34b84}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\ram\ram.vcxproj">
+      <Project>{5ef3e967-2dcb-4f2f-b6a0-78ebef746214}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

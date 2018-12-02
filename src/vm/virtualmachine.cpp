@@ -15,7 +15,7 @@ VirtualMachine::VirtualMachine(QWidget *parent)
 	, m_cCPU()
 	, m_cDebugger()
 {
-	QFile file("./input.exe");
+	QFile file("./fibonachi.exe");
 	file.open(QIODevice::ReadOnly);
 	if (file.isOpen())
 	{

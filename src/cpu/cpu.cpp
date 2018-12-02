@@ -27,6 +27,12 @@ CCPU::InstructionMap CCPU::InitMap()
 	map.insert(CCPU::ASG, QPair<quint8, CCPU::FunctionPointer>(6, &CCPU::ASG_exec));
 	map.insert(CCPU::LOD, QPair<quint8, CCPU::FunctionPointer>(3, &CCPU::LOD_exec));
 	map.insert(CCPU::STR, QPair<quint8, CCPU::FunctionPointer>(3, &CCPU::STR_exec));
+	map.insert(CCPU::MOV, QPair<quint8, CCPU::FunctionPointer>(3, &CCPU::MOV_exec));
+	map.insert(CCPU::CMP, QPair<quint8, CCPU::FunctionPointer>(3, &CCPU::CMP_exec));
+	map.insert(CCPU::JMP, QPair<quint8, CCPU::FunctionPointer>(5, &CCPU::JMP_exec));
+	map.insert(CCPU::JMPC, QPair<quint8, CCPU::FunctionPointer>(6, &CCPU::JMPC_exec));
+	map.insert(CCPU::INC, QPair<quint8, CCPU::FunctionPointer>(2, &CCPU::INC_exec));
+	map.insert(CCPU::DEC, QPair<quint8, CCPU::FunctionPointer>(2, &CCPU::DEC_exec));
 	REGISTER_EXECUTER1(NAND, 4)
 	REGISTER_EXECUTER1(ADD, 4)
 	REGISTER_EXECUTER1(SUB, 4)
@@ -36,37 +42,16 @@ CCPU::InstructionMap CCPU::InitMap()
 	REGISTER_EXECUTER1(SUBS, 4)
 	REGISTER_EXECUTER1(MULS, 4)
 	REGISTER_EXECUTER1(DIVS, 4)
-	REGISTER_EXECUTER1(MOV, 4)
-	REGISTER_EXECUTER(JMP, 3,4,6,10)
 	REGISTER_EXECUTER1(SWP, 4)
 	REGISTER_EXECUTER1(AND, 4)
 	REGISTER_EXECUTER1(OR, 4)
 	REGISTER_EXECUTER1(XOR, 4)
 	REGISTER_EXECUTER1(NOR, 4)
-	REGISTER_EXECUTER1(INC, 4)
-	REGISTER_EXECUTER1(DEC, 4)
 	REGISTER_EXECUTER1(NOT, 3)
 	return map;
 }
 
 CCPU::InstructionMap CCPU::s_mapInstructions = CCPU::InitMap();
-
-QString GetOperationName(CCPU::InstructionCode operation)
-{
-	switch (operation)
-	{
-	case CCPU::InstructionCode::NOP: return "NOP";
-	case CCPU::InstructionCode::RET: return "RET";
-	case CCPU::InstructionCode::INT: return "INT";
-	case CCPU::InstructionCode::BRK: return "BRK";
-	case CCPU::InstructionCode::ADD: return "ADD";
-	case CCPU::InstructionCode::SUB: return "SUB";
-	case CCPU::InstructionCode::MUL: return "MUL";
-	case CCPU::InstructionCode::DIV: return "DIV";
-	}
-
-	return "Unknown instruction";
-}
 
 CCPU::CCPU()
 	: m_sState()
@@ -87,8 +72,26 @@ void CCPU::Fetch()
 quint8 CCPU::Decode()
 {
 	qint32 opcode = ((quint8*)m_sState.IR)[0];
-	if (opcode <= 12)
+	switch(opcode)
 	{
+	case CCPU::NOP:
+	case CCPU::RET:
+	case CCPU::BRK:
+	case CCPU::HLT:
+	case CCPU::CALL:
+	case CCPU::INT:
+	case CCPU::PUSH:
+	case CCPU::POP:
+	case CCPU::PUSHF:
+	case CCPU::POPF:
+	case CCPU::ASG:
+	case CCPU::LOD:
+	case CCPU::STR:
+	case CCPU::MOV:
+	case CCPU::JMP:
+	case CCPU::JMPC:
+	case CCPU::INC:
+	case CCPU::DEC:
 		m_fptrExecuter = CCPU::s_mapInstructions[opcode].second;
 		return CCPU::s_mapInstructions[opcode].first;
 	}
@@ -100,7 +103,6 @@ quint8 CCPU::Decode()
 
 void CCPU::Execute()
 {
-	m_sState.FLAGS = (SState::EFlags)0;
 	std::invoke(m_fptrExecuter, this);
 }
 //
@@ -124,7 +126,6 @@ void CCPU::Run()
 
 		Fetch();
 		m_sState.PC += Decode();
-		m_sState.FLAGS = (SState::EFlags)0;
 		Execute();
 	}
 }
@@ -151,7 +152,7 @@ void CCPU::CALL_exec() {
 	m_sState.SP -= 4;
 
 	CRAM::instance()->operator[]<quint32>(m_sState.SP) = m_sState.PC;
-	m_sState.PC = (quint32)m_sState.IR[2];
+	m_sState.PC = *(quint32*)(m_sState.IR + 1);
 }
 
 void CCPU::RET_exec() {
@@ -184,20 +185,10 @@ void CCPU::PUSH_exec() {
 	}
 	else
 	{
-		if (m_sState.IR[1] & 0x40)
-		{
-			if (m_sState.IR[2] + 1 > 64)
-				throw invalid_register_exception();
+		if ((m_sState.IR[2] & 0x3F) + 4 > 64)
+			throw invalid_register_exception();
 
-			CRAM::instance()->operator[]<quint8>(m_sState.SP) = (quint8)m_sState.GR[m_sState.IR[1]];
-		}
-		else
-		{
-			if (m_sState.IR[2] + 4 > 64)
-				throw invalid_register_exception();
-
-			CRAM::instance()->operator[]<quint32>(m_sState.SP) = (quint32)m_sState.GR[m_sState.IR[1]];
-		}
+		CRAM::instance()->operator[]<quint32>(m_sState.SP) = *(quint32*)(m_sState.GR + m_sState.IR[1]);
 	}
 }
 
@@ -211,20 +202,10 @@ void CCPU::POP_exec() {
 	}
 	else
 	{
-		if (m_sState.IR[1] & 0x40)
-		{
-			if (m_sState.IR[2] + 1 > 64)
-				throw invalid_register_exception();
+		if ((m_sState.IR[2] & 0x3F) + 4 > 64)
+			throw invalid_register_exception();
 
-			(quint8&)m_sState.GR[m_sState.IR[1]] = CRAM::instance()->operator[]<quint8>(m_sState.SP);
-		}
-		else
-		{
-			if (m_sState.IR[2] + 4 > 64)
-				throw invalid_register_exception();
-
-			(quint32&)m_sState.GR[m_sState.IR[1]] = CRAM::instance()->operator[]<quint32>(m_sState.SP);
-		}
+		(quint32&)m_sState.GR[m_sState.IR[1]] = CRAM::instance()->operator[]<quint32>(m_sState.SP);
 	}
 	m_sState.SP += 4;
 }
@@ -241,8 +222,8 @@ void CCPU::POPF_exec() {
 
 template <typename INT_TYPE>
 void CCPU::ADD_exec() {
-	INT_TYPE o1 = (INT_TYPE)((m_sState.GR)[m_sState.IR[2]]);
-	INT_TYPE o2 = (INT_TYPE)((m_sState.GR)[m_sState.IR[3]]);
+	INT_TYPE o1 = *(INT_TYPE*)(m_sState.GR + m_sState.IR[2]);
+	INT_TYPE o2 = *(INT_TYPE*)(m_sState.GR + m_sState.IR[3]);
 	INT_TYPE result = o1 + o2;
 
 	if (result < o1 || result < o2)
@@ -255,8 +236,8 @@ void CCPU::ADD_exec() {
 
 template <typename INT_TYPE>
 void CCPU::SUB_exec() {
-	INT_TYPE o1 = (INT_TYPE)((m_sState.GR)[m_sState.IR[2]]);
-	INT_TYPE o2 = (INT_TYPE)((m_sState.GR)[m_sState.IR[3]]);
+	INT_TYPE o1 = *(INT_TYPE*)(m_sState.GR + m_sState.IR[2]);
+	INT_TYPE o2 = *(INT_TYPE*)(m_sState.GR + m_sState.IR[3]);
 	INT_TYPE result = o1 - o2;
 
 	if (result > o1 || result > o2)
@@ -269,8 +250,8 @@ void CCPU::SUB_exec() {
 
 template <typename INT_TYPE>
 void CCPU::MUL_exec() {
-	INT_TYPE o1 = (INT_TYPE)((m_sState.GR)[m_sState.IR[2]]);
-	INT_TYPE o2 = (INT_TYPE)((m_sState.GR)[m_sState.IR[3]]);
+	INT_TYPE o1 = *(INT_TYPE*)(m_sState.GR + m_sState.IR[2]);
+	INT_TYPE o2 = *(INT_TYPE*)(m_sState.GR + m_sState.IR[3]);
 	INT_TYPE result = o1 * o2;
 
 	if (result > o1 || result > o2)
@@ -283,8 +264,8 @@ void CCPU::MUL_exec() {
 
 template <typename INT_TYPE>
 void CCPU::DIV_exec() {
-	INT_TYPE o1 = (INT_TYPE)((m_sState.GR)[m_sState.IR[2]]);
-	INT_TYPE o2 = (INT_TYPE)((m_sState.GR)[m_sState.IR[3]]);
+	INT_TYPE o1 = *(INT_TYPE*)(m_sState.GR + m_sState.IR[2]);
+	INT_TYPE o2 = *(INT_TYPE*)(m_sState.GR + m_sState.IR[3]);
 	INT_TYPE result = o1 / o2;
 
 	if (result == 0)
@@ -295,8 +276,8 @@ void CCPU::DIV_exec() {
 
 template <typename INT_TYPE>
 void CCPU::ADDS_exec() {
-	INT_TYPE o1 = (INT_TYPE)((m_sState.GR)[m_sState.IR[2]]);
-	INT_TYPE o2 = (INT_TYPE)((m_sState.GR)[m_sState.IR[3]]);
+	INT_TYPE o1 = *(INT_TYPE*)(m_sState.GR + m_sState.IR[2]);
+	INT_TYPE o2 = *(INT_TYPE*)(m_sState.GR + m_sState.IR[3]);
 	INT_TYPE result = o1 + o2;
 
 	if ((o1 > 0 && o2 > 0) && (result < o1 || result < o2) ||
@@ -312,8 +293,8 @@ void CCPU::ADDS_exec() {
 
 template <typename INT_TYPE>
 void CCPU::SUBS_exec() {
-	INT_TYPE o1 = (INT_TYPE)((m_sState.GR)[m_sState.IR[2]]);
-	INT_TYPE o2 = (INT_TYPE)((m_sState.GR)[m_sState.IR[3]]);
+	INT_TYPE o1 = *(INT_TYPE*)(m_sState.GR + m_sState.IR[2]);
+	INT_TYPE o2 = *(INT_TYPE*)(m_sState.GR + m_sState.IR[3]);
 	INT_TYPE result = o1 - o2;
 
 	if ((o1 > 0 && o2 > 0) && (result < o1 || result < o2) ||
@@ -329,8 +310,8 @@ void CCPU::SUBS_exec() {
 
 template <typename INT_TYPE>
 void CCPU::MULS_exec() {
-	INT_TYPE o1 = (INT_TYPE)((m_sState.GR)[m_sState.IR[2]]);
-	INT_TYPE o2 = (INT_TYPE)((m_sState.GR)[m_sState.IR[3]]);
+	INT_TYPE o1 = *(INT_TYPE*)(m_sState.GR + m_sState.IR[2]);
+	INT_TYPE o2 = *(INT_TYPE*)(m_sState.GR + m_sState.IR[3]);
 	INT_TYPE result = o1 * o2;
 
 	if ((o1 > 0 && o2 > 0) && (result < o1 || result < o2) ||
@@ -346,8 +327,8 @@ void CCPU::MULS_exec() {
 
 template <typename INT_TYPE>
 void CCPU::DIVS_exec() {
-	INT_TYPE o1 = (INT_TYPE)((m_sState.GR)[m_sState.IR[2]]);
-	INT_TYPE o2 = (INT_TYPE)((m_sState.GR)[m_sState.IR[3]]);
+	INT_TYPE o1 = *(INT_TYPE*)(m_sState.GR + m_sState.IR[2]);
+	INT_TYPE o2 = *(INT_TYPE*)(m_sState.GR + m_sState.IR[3]);
 	INT_TYPE result = o1 / o2;
 
 	if ((o1 > 0 && o2 > 0) && (result < o1 || result < o2) ||
@@ -361,58 +342,152 @@ void CCPU::DIVS_exec() {
 	(INT_TYPE&)m_sState.GR[m_sState.IR[2]] = result;
 }
 
-template <typename INT_TYPE>
 void CCPU::MOV_exec() {
-	if ((m_sState.IR[1] & CCPU::REGISTER_MASK1)
-		&& (m_sState.IR[1] & CCPU::REGISTER_MASK2))
+	if ((m_sState.IR[1] & 0x80)
+		&& (m_sState.IR[2] & 0x80))
 	{
-		if (m_sState.IR[2] > 5 || m_sState.IR[3] > 5)
+		if ((m_sState.IR[1] & 0x07) > 5 || (m_sState.IR[2] & 0x07) > 5)
 			throw invalid_register_exception();
-		m_sState.AR[m_sState.IR[2]] = m_sState.AR[m_sState.IR[3]];
+		m_sState.AR[(m_sState.IR[1] & 0x07)] = m_sState.AR[(m_sState.IR[2] & 0x07)];
 	}
-	else if ((m_sState.IR[1] & CCPU::REGISTER_MASK1)
-		&& !(m_sState.IR[1] & CCPU::REGISTER_MASK2))
+	else if ((m_sState.IR[1] & 0x80)
+		&& !(m_sState.IR[2] & 0x80))
 	{
-		if (m_sState.IR[2] > 5 || (m_sState.IR[3] + sizeof(INT_TYPE)) > 64)
+		if ((m_sState.IR[1] & 0x07) > 5 || ((m_sState.IR[2] & 0x3F) + 4) > 64)
 			throw invalid_register_exception();
-		m_sState.AR[m_sState.IR[2]] = (INT_TYPE)m_sState.GR[m_sState.IR[3]];
+		m_sState.AR[m_sState.IR[1] & 0x07] = *(quint32*)(m_sState.GR + (m_sState.IR[2] & 0x3F));
 	}
-	else if (!(m_sState.IR[1] & CCPU::REGISTER_MASK1)
-		&& !(m_sState.IR[1] & CCPU::REGISTER_MASK2))
+	else if (!(m_sState.IR[1] & 0x80)
+		&& !(m_sState.IR[2] & 0x80))
 	{
-		if ((m_sState.IR[2] + sizeof(INT_TYPE)) > 64 || (m_sState.IR[3] + sizeof(INT_TYPE)) > 64)
+		if (((m_sState.IR[1] & 0x3F) + 4) > 64 || ((m_sState.IR[2] & 0x3F) + 4) > 64)
 			throw invalid_register_exception();
-		(INT_TYPE&)m_sState.GR[m_sState.IR[2]] = (INT_TYPE)m_sState.GR[m_sState.IR[3]];
+		(quint32&)m_sState.GR[m_sState.IR[1] & 0x3F] = *(quint32*)(m_sState.GR + (m_sState.IR[2] & 0x3F));
 	}
-	else if (!(m_sState.IR[1] & CCPU::REGISTER_MASK1)
-		&& (m_sState.IR[1] & CCPU::REGISTER_MASK2))
+	else if (!(m_sState.IR[1] & 0x80)
+		&& (m_sState.IR[2] & 0x80))
 	{
-		if ((m_sState.IR[2] + sizeof(INT_TYPE)) > 64 || m_sState.IR[3] > 5)
+		if (((m_sState.IR[1] & 0x3F) + 4) > 64 || (m_sState.IR[2] & 0x07) > 5)
 			throw invalid_register_exception();
-		(INT_TYPE&)m_sState.GR[m_sState.IR[2]] = m_sState.AR[m_sState.IR[3]];
+		(quint32&)m_sState.GR[m_sState.IR[1] & 0x3F] = m_sState.AR[m_sState.IR[2] & 0x07];
 	}
 }
 
 void CCPU::ASG_exec() {
-	m_sState.AR[m_sState.IR[1]] = (quint32)m_sState.IR[2];
+	if (m_sState.IR[1] & 0x80)
+		m_sState.AR[m_sState.IR[1] & 0x07] = (quint32)m_sState.IR[2];
+	else
+		m_sState.GR[m_sState.IR[1] & 0x3F] = (quint32)m_sState.IR[2];
 }
 
 void CCPU::LOD_exec() {
 	if(m_sState.IR[1] & 0x80)
-		(quint32&)m_sState.AR[m_sState.IR[1]] = (quint32)CRAM::instance()->operator[]<quint32>(m_sState.AR[m_sState.IR[2]]);
+		(quint32&)m_sState.AR[m_sState.IR[1] & 0x07] = (quint32)CRAM::instance()->operator[]<quint32>(m_sState.AR[m_sState.IR[2] & 0x07]);
 	else
-		(quint32&)m_sState.GR[m_sState.IR[1]] = (quint32)CRAM::instance()->operator[]<quint32>(m_sState.AR[m_sState.IR[2]]);
+		(quint32&)m_sState.GR[m_sState.IR[1] & 0x3F] = (quint32)CRAM::instance()->operator[]<quint32>(m_sState.AR[m_sState.IR[2] & 0x07]);
 }
 
 void CCPU::STR_exec() {
 	if (m_sState.IR[1] & 0x80)
-		(quint32&)CRAM::instance()->operator[]<quint32>(m_sState.AR[m_sState.IR[2]]) = (quint32)m_sState.AR[m_sState.IR[1]];
+		(quint32&)CRAM::instance()->operator[]<quint32>(m_sState.AR[m_sState.IR[2] & 0x07]) = *(quint32*)(m_sState.AR + (m_sState.IR[1] & 0x07));
 	else
-		(quint32&)CRAM::instance()->operator[]<quint32>(m_sState.AR[m_sState.IR[2]]) = (quint32)m_sState.GR[m_sState.IR[1]];
+		(quint32&)CRAM::instance()->operator[]<quint32>(m_sState.AR[m_sState.IR[2] & 0x07]) = *(quint32*)(m_sState.GR + (m_sState.IR[1] & 0x3F));
 }
 
-template <typename INT_TYPE>
+void CCPU::CMP_exec() {
+	switch (m_sState.IR[1] & 0xC0)
+	{
+	case BYTE:
+		if ((quint8)m_sState.GR[m_sState.IR[1] & 0x3C] == (quint8)m_sState.GR[m_sState.IR[2] & 0x3C])
+			m_sState.FLAGS = SState::ZFlag;
+		else
+			m_sState.FLAGS = 0;
+		break;
+	case WORD:
+		if ((quint16)m_sState.GR[m_sState.IR[1] & 0x3C] == (quint16)m_sState.GR[m_sState.IR[2] & 0x3C])
+			m_sState.FLAGS = SState::ZFlag;
+		else
+			m_sState.FLAGS = 0;
+		break;
+	case DOUBLE_WORD:
+		if ((quint32)m_sState.GR[m_sState.IR[1] & 0x3C] == (quint32)m_sState.GR[m_sState.IR[2] & 0x3C])
+			m_sState.FLAGS = SState::ZFlag;
+		else
+			m_sState.FLAGS = 0;
+		break;
+	case QUAD_WORD:
+		break;/*
+		if ((quint64)m_sState.GR[m_sState.IR[1] & 0x3C] == (quint64)m_sState.GR[m_sState.IR[2] & 0x3C])
+			m_sState.FLAGS = SState::ZFlag;
+		else
+			m_sState.FLAGS = 0;*/
+	}
+}
+
+void CCPU::JMPC_exec() {
+	quint32 mask = (m_sState.IR[1] & InstructionComponents::CONDITIONAL_MASK);
+	if ((mask == EQUAL) && (m_sState.FLAGS & m_sState.ZFlag) != 0)	
+		m_sState.PC = *(quint32*)(m_sState.IR + 2);
+	else if ((mask == NOT_EQUAL) && (m_sState.FLAGS & m_sState.ZFlag) == 0)
+		m_sState.PC = *(quint32*)(m_sState.IR + 2);
+	else if ((mask == ABOVE) &&
+		((m_sState.FLAGS & m_sState.CFlag) == 0) && ((m_sState.FLAGS & m_sState.ZFlag) == 0))
+		m_sState.PC = *(quint32*)(m_sState.IR + 2);
+	else if ((mask == ABOVE_OR_EQUAL) && (m_sState.FLAGS & m_sState.CFlag) == 0)
+		m_sState.PC = *(quint32*)(m_sState.IR + 2);
+	else if ((mask == BELOW) && (m_sState.FLAGS & m_sState.CFlag) != 0)
+		m_sState.PC = *(quint32*)(m_sState.IR + 2);
+	else if ((mask == BELOW_OR_EQUAL) &&
+		((m_sState.FLAGS & m_sState.CFlag) != 0) || ((m_sState.FLAGS & m_sState.ZFlag) != 0))
+		m_sState.PC = *(quint32*)(m_sState.IR + 2);
+	else if ((mask == GREATER) &&
+		((m_sState.FLAGS & m_sState.ZFlag) == 0) && ((m_sState.FLAGS & m_sState.SFlag) == (m_sState.FLAGS & m_sState.OFlag)))
+		m_sState.PC = *(quint32*)(m_sState.IR + 2);
+	else if ((mask == GREATER_OR_EQUAL) &&
+		((m_sState.FLAGS & m_sState.SFlag) == (m_sState.FLAGS & m_sState.OFlag)))
+		m_sState.PC = *(quint32*)(m_sState.IR + 2);
+	else if ((mask == LESS) &&
+		((m_sState.FLAGS & m_sState.SFlag) != (m_sState.FLAGS & m_sState.OFlag)))
+		m_sState.PC = *(quint32*)(m_sState.IR + 2);
+	else if ((mask == LESS_OR_EQUAL) &&
+		((m_sState.FLAGS & m_sState.ZFlag) == 0) && ((m_sState.FLAGS & m_sState.SFlag) != (m_sState.FLAGS & m_sState.OFlag)))
+		m_sState.PC = *(quint32*)(m_sState.IR + 2);
+	else if ((mask == OVERFLOW_SET) &&
+		((m_sState.FLAGS & m_sState.OFlag) != 0))
+		m_sState.PC = *(quint32*)(m_sState.IR + 2);
+	else if ((mask == NOT_OVERFLOW) &&
+		((m_sState.FLAGS & m_sState.OFlag) == 0))
+		m_sState.PC = *(quint32*)(m_sState.IR + 2);
+	else if ((mask == SIGN_SET) &&
+		((m_sState.FLAGS & m_sState.SFlag) != 0))
+		m_sState.PC = *(quint32*)(m_sState.IR + 2);
+	else if ((mask == NOT_SIGN) &&
+		((m_sState.FLAGS & m_sState.SFlag) == 0))
+		m_sState.PC = *(quint32*)(m_sState.IR + 2);
+	else if ((mask == PARITY_SET) &&
+		((m_sState.FLAGS & m_sState.PFlag) != 0))
+		m_sState.PC = *(quint32*)(m_sState.IR + 2);
+	else if ((mask == NOT_PARITY) &&
+		((m_sState.FLAGS & m_sState.PFlag) == 0))
+		m_sState.PC = *(quint32*)(m_sState.IR + 2);
+}
+
 void CCPU::JMP_exec() {
+	m_sState.PC = *(quint32*)(m_sState.IR + 1);
+}
+
+void CCPU::INC_exec() {
+	if (m_sState.IR[1] & 0x80)
+		++*(quint32*)(m_sState.AR[m_sState.IR[1] & 0x07]);
+	else
+		++*(quint32*)(m_sState.GR + (m_sState.IR[1] & 0x3F));
+}
+
+void CCPU::DEC_exec() {
+	if (m_sState.IR[1] & 0x80)
+		--*(quint32*)(m_sState.AR[m_sState.IR[1] & 0x07]);
+	else
+		--*(quint32*)(m_sState.GR + (m_sState.IR[1] & 0x3F));
 }
 
 template <typename INT_TYPE>
@@ -433,39 +508,6 @@ void CCPU::NOT_exec() {
 
 template <typename INT_TYPE>
 void CCPU::NOR_exec() {
-}
-
-template <typename INT_TYPE>
-void CCPU::INC_exec() {
-}
-
-template <typename INT_TYPE>
-void CCPU::DEC_exec() {
-}
-
-template <typename INT_TYPE>
-void CCPU::JNZ_exec() {
-}
-
-template <typename INT_TYPE>
-void CCPU::JNG_exec() {
-}
-
-template <typename INT_TYPE>
-void CCPU::JNL_exec() {
-}
-
-
-template <typename INT_TYPE>
-void CCPU::JG_exec() {
-}
-
-template <typename INT_TYPE>
-void CCPU::JL_exec() {
-}
-
-template <typename INT_TYPE>
-void CCPU::JZ_exec() {
 }
 
 template <typename INT_TYPE>

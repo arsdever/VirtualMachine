@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>348</width>
-    <height>172</height>
+    <height>208</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -32,7 +32,7 @@
      <item row="1" column="0">
       <widget class="QLabel" name="m_lblR1">
        <property name="text">
-        <string>R1</string>
+        <string>R4</string>
        </property>
        <property name="buddy">
         <cstring>m_pReg1</cstring>
@@ -45,7 +45,7 @@
      <item row="2" column="0">
       <widget class="QLabel" name="m_lblR2">
        <property name="text">
-        <string>R2</string>
+        <string>R8</string>
        </property>
        <property name="buddy">
         <cstring>m_pReg2</cstring>
@@ -58,7 +58,7 @@
      <item row="3" column="0">
       <widget class="QLabel" name="m_lblR3">
        <property name="text">
-        <string>R3</string>
+        <string>R12</string>
        </property>
        <property name="buddy">
         <cstring>m_pReg3</cstring>
@@ -70,12 +70,19 @@
      </item>
     </layout>
    </item>
-   <item row="0" column="1">
-    <layout class="QGridLayout" name="gridLayout_2">
+   <item row="1" column="0" colspan="4">
+    <widget class="QLabel" name="m_pFlagRegister">
+     <property name="text">
+      <string>TextLabel</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="3">
+    <layout class="QGridLayout" name="gridLayout_4">
      <item row="0" column="0">
-      <widget class="QLabel" name="m_lblR4">
+      <widget class="QLabel" name="m_lblR12">
        <property name="text">
-        <string>R4</string>
+        <string>R48</string>
        </property>
        <property name="buddy">
         <cstring>m_pReg4</cstring>
@@ -83,12 +90,12 @@
       </widget>
      </item>
      <item row="0" column="1">
-      <widget class="QLineEdit" name="m_pReg4"/>
+      <widget class="QLineEdit" name="m_pReg12"/>
      </item>
      <item row="1" column="0">
-      <widget class="QLabel" name="m_lblR5">
+      <widget class="QLabel" name="m_lblR13">
        <property name="text">
-        <string>R5</string>
+        <string>R52</string>
        </property>
        <property name="buddy">
         <cstring>m_pReg5</cstring>
@@ -96,12 +103,12 @@
       </widget>
      </item>
      <item row="1" column="1">
-      <widget class="QLineEdit" name="m_pReg5"/>
+      <widget class="QLineEdit" name="m_pReg13"/>
      </item>
      <item row="2" column="0">
-      <widget class="QLabel" name="m_lblR6">
+      <widget class="QLabel" name="m_lblR14">
        <property name="text">
-        <string>R6</string>
+        <string>R56</string>
        </property>
        <property name="buddy">
         <cstring>m_pReg6</cstring>
@@ -109,12 +116,12 @@
       </widget>
      </item>
      <item row="2" column="1">
-      <widget class="QLineEdit" name="m_pReg6"/>
+      <widget class="QLineEdit" name="m_pReg14"/>
      </item>
      <item row="3" column="0">
-      <widget class="QLabel" name="m_lblR7">
+      <widget class="QLabel" name="m_lblR15">
        <property name="text">
-        <string>R7</string>
+        <string>R60</string>
        </property>
        <property name="buddy">
         <cstring>m_pReg7</cstring>
@@ -122,7 +129,7 @@
       </widget>
      </item>
      <item row="3" column="1">
-      <widget class="QLineEdit" name="m_pReg7"/>
+      <widget class="QLineEdit" name="m_pReg15"/>
      </item>
     </layout>
    </item>
@@ -131,7 +138,7 @@
      <item row="1" column="0">
       <widget class="QLabel" name="m_lblR9">
        <property name="text">
-        <string>R9</string>
+        <string>R36</string>
        </property>
        <property name="buddy">
         <cstring>m_pReg5</cstring>
@@ -141,7 +148,7 @@
      <item row="2" column="0">
       <widget class="QLabel" name="m_lblR10">
        <property name="text">
-        <string>R10</string>
+        <string>R40</string>
        </property>
        <property name="buddy">
         <cstring>m_pReg6</cstring>
@@ -154,7 +161,7 @@
      <item row="3" column="0">
       <widget class="QLabel" name="m_lblR11">
        <property name="text">
-        <string>R11</string>
+        <string>R44</string>
        </property>
        <property name="buddy">
         <cstring>m_pReg7</cstring>
@@ -173,7 +180,7 @@
      <item row="0" column="0">
       <widget class="QLabel" name="m_lblR8">
        <property name="text">
-        <string>R8</string>
+        <string>R32</string>
        </property>
        <property name="buddy">
         <cstring>m_pReg4</cstring>
@@ -182,12 +189,12 @@
      </item>
     </layout>
    </item>
-   <item row="0" column="3">
-    <layout class="QGridLayout" name="gridLayout_4">
+   <item row="0" column="1">
+    <layout class="QGridLayout" name="gridLayout_2">
      <item row="0" column="0">
-      <widget class="QLabel" name="m_lblR12">
+      <widget class="QLabel" name="m_lblR4">
        <property name="text">
-        <string>R12</string>
+        <string>R16</string>
        </property>
        <property name="buddy">
         <cstring>m_pReg4</cstring>
@@ -195,12 +202,12 @@
       </widget>
      </item>
      <item row="0" column="1">
-      <widget class="QLineEdit" name="m_pReg12"/>
+      <widget class="QLineEdit" name="m_pReg4"/>
      </item>
      <item row="1" column="0">
-      <widget class="QLabel" name="m_lblR13">
+      <widget class="QLabel" name="m_lblR5">
        <property name="text">
-        <string>R13</string>
+        <string>R20</string>
        </property>
        <property name="buddy">
         <cstring>m_pReg5</cstring>
@@ -208,12 +215,12 @@
       </widget>
      </item>
      <item row="1" column="1">
-      <widget class="QLineEdit" name="m_pReg13"/>
+      <widget class="QLineEdit" name="m_pReg5"/>
      </item>
      <item row="2" column="0">
-      <widget class="QLabel" name="m_lblR14">
+      <widget class="QLabel" name="m_lblR6">
        <property name="text">
-        <string>R14</string>
+        <string>R24</string>
        </property>
        <property name="buddy">
         <cstring>m_pReg6</cstring>
@@ -221,12 +228,12 @@
       </widget>
      </item>
      <item row="2" column="1">
-      <widget class="QLineEdit" name="m_pReg14"/>
+      <widget class="QLineEdit" name="m_pReg6"/>
      </item>
      <item row="3" column="0">
-      <widget class="QLabel" name="m_lblR15">
+      <widget class="QLabel" name="m_lblR7">
        <property name="text">
-        <string>R15</string>
+        <string>R28</string>
        </property>
        <property name="buddy">
         <cstring>m_pReg7</cstring>
@@ -234,11 +241,18 @@
       </widget>
      </item>
      <item row="3" column="1">
-      <widget class="QLineEdit" name="m_pReg15"/>
+      <widget class="QLineEdit" name="m_pReg7"/>
      </item>
     </layout>
    </item>
-   <item row="3" column="1">
+   <item row="3" column="0" colspan="4">
+    <widget class="QPushButton" name="m_pSubmit">
+     <property name="text">
+      <string>Set this state</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="0" colspan="4">
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -251,17 +265,10 @@
      </property>
     </spacer>
    </item>
-   <item row="1" column="0" colspan="4">
-    <widget class="QLabel" name="m_pFlagRegister">
+   <item row="2" column="0">
+    <widget class="QLabel" name="m_pCurrentInstruction">
      <property name="text">
       <string>TextLabel</string>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="0" colspan="4">
-    <widget class="QPushButton" name="m_pSubmit">
-     <property name="text">
-      <string>Set this state</string>
      </property>
     </widget>
    </item>

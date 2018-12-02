@@ -19,6 +19,12 @@ public:
 public slots:
 	void UpdateValues(CCPU* pCPU);
 
+private slots:
+	void ChangeHandler();
+
+signals:
+	void ChangeRegister(quint8, quint32);
+
 public:
 	Ui_RegWindow form;
 };

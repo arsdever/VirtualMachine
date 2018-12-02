@@ -18,12 +18,12 @@ public:
 	{
 		enum EFlags
 		{
-			CFlag = 0,
-			ZFlag = 1,
-			SFlag = 2,
-			OFlag = 4,
-			PFlag = 8,
-			IFlag = 16
+			CFlag = 1,
+			ZFlag = 2,
+			SFlag = 4,
+			OFlag = 8,
+			PFlag = 16,
+			IFlag = 32
 		};
 
 		quint32 PC;
@@ -101,12 +101,16 @@ public:
 		ASG,//
 		LOD,//
 		STR,//
+		CMP,//
+		JMP,//
+		JMPC,//
+		INC,//
+		DEC,//
 		ADD,
 		SUB,
 		MUL,
 		DIV,
-		MOV,
-		JMP,
+		MOV,//
 		SWP,
 		AND,
 		OR,
@@ -114,8 +118,6 @@ public:
 		NOT,
 		NAND,
 		NOR,
-		INC,
-		DEC,
 		ADDS,
 		SUBS,
 		MULS,
@@ -132,13 +134,20 @@ public:
 		QUAD_WORD = 0x03,
 		SIZE_MASK = 0x03,
 
+		//CFlag = 1
+		//ZFlag = 2
+		//SFlag = 4
+		//OFlag = 8
+		//PFlag = 16
+		//IFlag = 32
+
 		EQUAL = 0x00,
 		ZERO = EQUAL,
-		NOTEQUAL = 0x04,
-		NOTZERO = NOTEQUAL,
-		ABOVE = 0x08,
+		NOT_EQUAL = 0x02,
+		NOT_ZERO = NOT_EQUAL,
+		ABOVE = 0x04,
 		NOT_BELOW_OR_EQUAL = ABOVE,
-		ABOVE_OR_EQUAL = 0x0C,
+		ABOVE_OR_EQUAL = 0x08,
 		NOT_BELOW = ABOVE_OR_EQUAL,
 		BELOW = 0x10,
 		NOT_ABOVE_OR_EQUAL = BELOW,
@@ -192,6 +201,12 @@ public:
 	void ASG_exec();
 	void LOD_exec();
 	void STR_exec();
+	void MOV_exec();
+	void CMP_exec();
+	void JMP_exec();
+	void JMPC_exec();
+	void INC_exec();
+	void DEC_exec();
 	template <typename INT_TYPE>
 	void NAND_exec();
 	template <typename INT_TYPE>
@@ -211,10 +226,6 @@ public:
 	template <typename INT_TYPE>
 	void DIVS_exec();
 	template <typename INT_TYPE>
-	void MOV_exec();
-	template <typename INT_TYPE>
-	void JMP_exec();
-	template <typename INT_TYPE>
 	void SWP_exec();
 	template <typename INT_TYPE>
 	void AND_exec();
@@ -224,22 +235,6 @@ public:
 	void NOT_exec();
 	template <typename INT_TYPE>
 	void NOR_exec();
-	template <typename INT_TYPE>
-	void INC_exec();
-	template <typename INT_TYPE>
-	void DEC_exec();
-	template <typename INT_TYPE>
-	void JNZ_exec();
-	template <typename INT_TYPE>
-	void JNG_exec();
-	template <typename INT_TYPE>
-	void JNL_exec();
-	template <typename INT_TYPE>
-	void JG_exec();
-	template <typename INT_TYPE>
-	void JL_exec();
-	template <typename INT_TYPE>
-	void JZ_exec();
 	template <typename INT_TYPE>
 	void OR_exec();
 

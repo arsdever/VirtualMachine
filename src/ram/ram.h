@@ -11,7 +11,7 @@ class RAM_EXPORT CRAM : public QObject
 	Q_OBJECT
 
 public:
-	CRAM(quint32 nSize = 0xffff);
+	CRAM(quint32 nSize = 0x10000);
 	~CRAM();
 
 	template <typename INT_TYPE>
