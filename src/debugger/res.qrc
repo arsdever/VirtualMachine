@@ -1,0 +1,12 @@
+<RCC>
+    <qresource prefix="/">
+        <file>Resources/pause_icon_16x16.png</file>
+        <file>Resources/play_icon_16x16.png</file>
+        <file>Resources/stop_icon_16x16.png</file>
+        <file>Resources/step_icon_16x16.png</file>
+        <file>Resources/step_into_icon_16x16.png</file>
+        <file>Resources/breakpoint_icon_16x16.png</file>
+        <file>Resources/into_memory_icon_16x16.png</file>
+        <file>Resources/memory_icon_16x16.png</file>
+    </qresource>
+</RCC>

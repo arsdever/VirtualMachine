@@ -77,6 +77,7 @@ public:
 public:
 	CCPU();
 	void Run();
+	void Step();
 	void Fetch();
 	quint8 Decode();
 	void Execute();

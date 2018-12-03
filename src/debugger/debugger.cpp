@@ -11,6 +11,7 @@
 #include <QStyle>
 #include <assets>
 #include <QDate>
+#include <QMenuBar>
 
 CDebugger::CDebugger()
 	: m_pProcess(nullptr)
@@ -19,29 +20,7 @@ CDebugger::CDebugger()
 	, m_pARegView(new CARegisterWindow())
 	, m_pMemory(new QTextEdit())
 {
-	QPushButton* continueButton = new QPushButton("Continue");
-	QPushButton* stepButton = new QPushButton("Step");
-	QPushButton* setBreakpoint = new QPushButton("Set breakpoint");
-	QPushButton* setMemoryValue = new QPushButton("Set memory value");
-	QPushButton* showMemory = new QPushButton("Show memory");
-	QPushButton* gprButton = new QPushButton("Show/hide general porpuse registers");
-	QPushButton* arButton = new QPushButton("Show/hide address registers");
-
 	setLayout(new QVBoxLayout());
-	layout()->addWidget(continueButton);
-	layout()->addWidget(stepButton);
-	layout()->addWidget(setBreakpoint);
-	layout()->addWidget(setMemoryValue);
-	layout()->addWidget(showMemory);
-	layout()->addWidget(gprButton);
-	layout()->addWidget(arButton);
-	connect(continueButton, SIGNAL(clicked()), this, SLOT(Run()));
-	connect(stepButton, SIGNAL(clicked()), this, SLOT(Step()));
-	connect(setBreakpoint, SIGNAL(clicked()), this, SLOT(SetBreakpoint()));
-	connect(setMemoryValue, SIGNAL(clicked()), this, SLOT(SetMemory()));
-	connect(showMemory, SIGNAL(clicked()), this, SLOT(ShowMemory()));
-	connect(gprButton, SIGNAL(clicked()), this, SLOT(ToggleRegisters()));
-	connect(arButton, SIGNAL(clicked()), this, SLOT(ToggleARegisters()));
 	connect(m_pRegView, SIGNAL(ChangeRegister(quint8, quint32)), this, SLOT(SetRegisterValue(quint8, quint32)));
 }
 
@@ -49,7 +28,9 @@ void CDebugger::UpdateInformation()
 {
 	m_pRegView->UpdateValues(m_pProcess);
 	m_pARegView->UpdateValues(m_pProcess);
+	m_strCurrentInstruction = CDisassembler::Disassemble(&CRAM::instance()->operator[]<quint8>(m_pProcess->GetState().PC));
 	UpdateMemory();
+	emit Update();
 }
 
 void CDebugger::UpdateMemory()
@@ -91,17 +72,8 @@ void CDebugger::HandleBreakpoint()
 
 void CDebugger::Run()
 {
-	quint32 pos = m_pProcess->m_sState.PC;
-
 	try
 	{
-		if (m_mapBreakpoints.contains(pos))
-		{
-			quint32 size = CCPU::s_mapInstructions[m_mapBreakpoints[pos]].first;
-			Step();
-			SetBreakpoint(m_pProcess->m_sState.PC - size);
-		}
-
 		m_pProcess->Run();
 	}
 	catch (const CCPU::breakpoint_exception&)
@@ -129,15 +101,11 @@ void CDebugger::ShowMemory()
 	memory->setFixedWidth((m_nMemoryShowSize * 3 + 12) * QFontMetrics(qApp->font()).width('9') + 60);
 }
 
-void CDebugger::Step()
+void CDebugger::StepInto(bool b)
 {
-	quint32 size = CCPU::s_mapInstructions[CRAM::instance()->operator[]<quint8>(m_pProcess->m_sState.PC)].first;
-	quint32 pos = m_pProcess->GetState().PC + size;
-	SetBreakpoint(pos);
-
 	try
 	{
-		m_pProcess->Run();
+		m_pProcess->Step();
 	}
 	catch (const CCPU::breakpoint_exception&)
 	{
@@ -149,8 +117,19 @@ void CDebugger::Step()
 
 	}
 
+	if(b)
+		UpdateInformation();
+}
+
+void CDebugger::Step()
+{
+	quint32 size = CCPU::s_mapInstructions[CRAM::instance()->operator[]<quint8>(m_pProcess->m_sState.PC)].first;
+	quint32 pos = m_pProcess->GetState().PC + size;
+
+	while (m_pProcess->GetState().PC != pos)
+		StepInto(false);
+
 	UpdateInformation();
-	QMessageBox::information(this, "Success", "Execution finished.");
 }
 
 void CDebugger::SetBreakpoint()
@@ -216,6 +195,7 @@ void CDebugger::SetBreakpoint(quint32 nPosition)
 	}
 
 	findChildren<QPushButton*>().at(2)->setToolTip(bpList);
+	UpdateMemory();
 }
 
 void CDebugger::LoadBreakpoints(QString const& path)
@@ -259,4 +239,17 @@ void CDebugger::ToggleARegisters()
 		m_pARegView->show();
 	else
 		m_pARegView->hide();
+}
+
+void CDebugger::PopulateMenuBar(QMenuBar* pMenuBar)
+{
+	QMenu* pMenu = pMenuBar->addMenu("Debug");
+	pMenu->addAction(QIcon(":/Resources/play_icon_16x16.png"), "Run", this, SLOT(Run()), QKeySequence("F5"));
+	pMenu->addAction(QIcon(":/Resources/step_icon_16x16.png"), "Step", this, SLOT(Step()), QKeySequence("F10"));
+	pMenu->addAction(QIcon(":/Resources/step_into_icon_16x16.png"), "Step into", this, SLOT(StepInto()), QKeySequence("F11"));
+	pMenu->addAction(QIcon(":/Resources/breakpoint_icon_16x16.png"), "Set breakpoint", this, SLOT(SetBreakpoint()), QKeySequence("F9"));
+	pMenu->addAction(QIcon(":/Resources/into_memory_icon_16x16.png"), "Set memory value", this, SLOT(SetMemory()));
+	pMenu->addAction(QIcon(":/Resources/memory_icon_16x16.png"), "Show memory", this, SLOT(ShowMemory()), QKeySequence("CTRL+M"));
+	pMenu->addAction("Show/hide general porpuse registers"), this, SLOT(ToggleRegisters());
+	pMenu->addAction("Show/hide address registers"), this, SLOT(ToggleARegisters());
 }

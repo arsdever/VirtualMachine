@@ -7,6 +7,7 @@
 
 class CCPU;
 class CDebugger;
+class QPlainTextEdit;
 
 class VirtualMachine : public QMainWindow
 {
@@ -15,8 +16,18 @@ class VirtualMachine : public QMainWindow
 public:
 	VirtualMachine(QWidget *parent = Q_NULLPTR);
 	~VirtualMachine() {};
+
+	void LoadProgram(QString const& path);
+	void InitMenuBar();
 	
+protected:
+	void UpdateStatusBar();
+	
+protected slots:
+	void OnOpen();
+
 private:
 	CCPU m_cCPU;
 	CDebugger m_cDebugger;
+	QPlainTextEdit* m_pEditor;
 };

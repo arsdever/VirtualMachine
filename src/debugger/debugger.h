@@ -1,7 +1,7 @@
 #pragma once
 
 #include "debugger_global.h"
-#include <QWidget>
+#include <QMainWindow>
 #include <QMap>
 
 class QPushButton;
@@ -9,6 +9,7 @@ class CCPU;
 class CRegisterWindow;
 class CARegisterWindow;
 class QTextEdit;
+class QMenuBar;
 
 class DEBUGGER_EXPORT CDebugger : public QWidget
 {
@@ -24,6 +25,11 @@ public:
 	void AttachToProcess(CCPU* pCPU);
 	void Detach();
 
+	CRegisterWindow* GetRegisterAreaWidget() const { return m_pRegView; }
+	CARegisterWindow* GetARegisterAreaWidget() const { return m_pARegView; }
+	QString GetCurrentInstruction() const { return m_strCurrentInstruction; }
+	void PopulateMenuBar(QMenuBar* pMenuBar);
+
 	void UpdateInformation();
 	void UpdateMemory();
 	void SetBreakpoint(quint32 nPosition);
@@ -31,6 +37,7 @@ public:
 public slots:
 	void Run();
 	void Step();
+	void StepInto(bool b = true);
 	void SetBreakpoint();
 	void SetMemory();
 	void ShowMemory();
@@ -40,7 +47,7 @@ public slots:
 	void ToggleARegisters();
 
 signals:
-	void UpdateValues();
+	void Update();
 
 private:
 	QMap<quint32, quint8> m_mapBreakpoints;
@@ -48,5 +55,6 @@ private:
 	CRegisterWindow* m_pRegView;
 	CARegisterWindow* m_pARegView;
 	QTextEdit* m_pMemory;
+	QString m_strCurrentInstruction;
 	bool m_bRunning;
 };

@@ -121,13 +121,18 @@ void CCPU::Run()
 {
 	while (m_sState.RUN)
 	{
-		if (m_sState.FLAGS & SState::IFlag)
-			HandleInterrupt();
-
-		Fetch();
-		m_sState.PC += Decode();
-		Execute();
+		Step();
 	}
+}
+
+void CCPU::Step()
+{
+	if (m_sState.FLAGS & SState::IFlag)
+		HandleInterrupt();
+
+	Fetch();
+	m_sState.PC += Decode();
+	Execute();
 }
 
 void CCPU::HandleInterrupt()

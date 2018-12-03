@@ -5,7 +5,6 @@
 #include <QPushButton>
 #include <QIntValidator>
 #include <register>
-#include <assets>
 #include <cpu>
 #include <ram>
 
@@ -71,7 +70,6 @@ void CRegisterWindow::UpdateValues(CCPU* pCPU)
 	form.m_pReg14->setText(QString("0x%1").arg(registers[14], 8, 16, QChar('0')));
 	form.m_pReg15->setText(QString("0x%1").arg(registers[15], 8, 16, QChar('0')));
 	form.m_pFlagRegister->setText(QString::number(pCPU->GetState().FLAGS, 16));
-	form.m_pCurrentInstruction->setText(CDisassembler::Disassemble(&(CRAM::instance()->operator[]<quint8>(pCPU->GetState().PC))));
 }
 
 CARegisterWindow::CARegisterWindow(QWidget* pParent)

@@ -1,4 +1,13 @@
 #include "disassembler.h"
+#include <QFile>
+
+QMap<quint32, QString> CDisassembler::s_mapRelocaionTable;
+QMap<quint32, quint32> CDisassembler::s_mapLineAddresses;
+quint32 CDisassembler::s_nSymbolTableAddress;
+quint32 CDisassembler::s_nDataSectionAddress;
+quint32 CDisassembler::s_nCodeSectionAddress;
+quint32 CDisassembler::s_nRelocationTableAddress;
+bool CDisassembler::s_bSkipNop = true;
 
 QString GetOperationName(quint8 operation)
 {
@@ -40,7 +49,7 @@ QString GetOperationName(quint8 operation)
 	case CCPU::InstructionCode::DIVS: return "divs";
 	}
 
-	return "nop";
+	return "???";
 }
 
 CDisassembler::CDisassembler()
@@ -60,23 +69,16 @@ QString CDisassembler::Disassemble(quint8 instruction[8])
 	case CCPU::InstructionCode::SUB: 
 	case CCPU::InstructionCode::MUL: 
 	case CCPU::InstructionCode::DIV:
-	{
-		if ((instruction[1] & CCPU::InstructionComponents::SIZE_MASK) == CCPU::InstructionComponents::BYTE)
-			result += " byte r";
-		else if ((instruction[1] & CCPU::InstructionComponents::SIZE_MASK) == CCPU::InstructionComponents::WORD)
-			result += " word r";
-		else if ((instruction[1] & CCPU::InstructionComponents::SIZE_MASK) == CCPU::InstructionComponents::DOUBLE_WORD)
-			result += " dword r";
-		else if ((instruction[1] & CCPU::InstructionComponents::SIZE_MASK) == CCPU::InstructionComponents::QUAD_WORD)
-			result += " qword r";
-
-		result += QString("%1,%2").arg(instruction[2]).arg((qint32)instruction[3]);
-		break;
-	}
 	case CCPU::InstructionCode::ADDS:
 	case CCPU::InstructionCode::SUBS:
 	case CCPU::InstructionCode::MULS:
 	case CCPU::InstructionCode::DIVS:
+	case CCPU::InstructionCode::AND:
+	case CCPU::InstructionCode::OR:
+	case CCPU::InstructionCode::XOR:
+	case CCPU::InstructionCode::NOT:
+	case CCPU::InstructionCode::NAND:
+	case CCPU::InstructionCode::NOR:
 	{
 		if ((instruction[1] & CCPU::InstructionComponents::SIZE_MASK) == CCPU::InstructionComponents::BYTE)
 			result += " byte r";
@@ -87,7 +89,7 @@ QString CDisassembler::Disassemble(quint8 instruction[8])
 		else if ((instruction[1] & CCPU::InstructionComponents::SIZE_MASK) == CCPU::InstructionComponents::QUAD_WORD)
 			result += " qword r";
 
-		result += QString("%1,%2").arg(instruction[2]).arg((quint32)instruction[3]);
+		result += QString("%1, %2").arg(instruction[2]).arg((qint32)instruction[3]);
 		break;
 	}
 	case CCPU::InstructionCode::PUSH:
@@ -97,23 +99,96 @@ QString CDisassembler::Disassemble(quint8 instruction[8])
 		break;
 	}
 	case CCPU::InstructionCode::CALL:
-		result += QString(" %1h").arg(*(quint32*)(instruction + 1), 8, 16, QChar('0'));
-		break;
-	case CCPU::InstructionCode::ASG:
-	case CCPU::InstructionCode::LOD:
-	case CCPU::InstructionCode::STR:
-	case CCPU::InstructionCode::MOV:
 	case CCPU::InstructionCode::JMP:
+	case CCPU::InstructionCode::JMPC:
+	{
+		quint32 address = *(quint32*)(instruction + 1);
+		if(s_mapRelocaionTable.contains(address))
+			result += QString(" %1").arg(s_mapRelocaionTable[address]);
+		else
+			result += QString(" %1h").arg(address, 8, 16, QChar('0'));
+		break;
+	} 
+	case CCPU::InstructionCode::ASG:
+		result += QString(" %1, %2h")
+			.arg(QString("%1%2").arg(instruction[1] & 0x80 ? 'a' : 'r').arg(instruction[1] & 0x80 ? instruction[1] & 0x07 : instruction[1] & 0x3F))
+			.arg(*(quint32*)(instruction + 2), 8, 16, QChar('0'));
+		break;
+	case CCPU::InstructionCode::LOD:
+		result += QString(" %1, a%2")
+			.arg(QString("%1%2").arg(instruction[1] & 0x80 ? 'a' : 'r').arg(instruction[1] & 0x80 ? instruction[1] & 0x07 : instruction[1] & 0x3F))
+			.arg(instruction[2] & 0x07, 8, 16, QChar('0'));
+		break;
+	case CCPU::InstructionCode::STR:
+		result += QString(" %1, a%2")
+			.arg(QString("%1%2").arg(instruction[1] & 0x80 ? 'a' : 'r').arg(instruction[1] & 0x80 ? instruction[1] & 0x07 : instruction[1] & 0x3F))
+			.arg(instruction[2] & 0x07, 8, 16, QChar('0'));
+		break;
+	case CCPU::InstructionCode::MOV:
 	case CCPU::InstructionCode::SWP:
-	case CCPU::InstructionCode::AND:
-	case CCPU::InstructionCode::OR:
-	case CCPU::InstructionCode::XOR:
-	case CCPU::InstructionCode::NOT:
-	case CCPU::InstructionCode::NAND:
-	case CCPU::InstructionCode::NOR:
+	case CCPU::InstructionCode::CMP:
+		result += QString(" %1, %2")
+			.arg(QString("%1%2").arg(instruction[1] & 0x80 ? 'a' : 'r').arg(instruction[1] & 0x80 ? instruction[1] & 0x07 : instruction[1] & 0x3F))
+			.arg(QString("%1%2").arg(instruction[2] & 0x80 ? 'a' : 'r').arg(instruction[2] & 0x80 ? instruction[2] & 0x07 : instruction[2] & 0x3F));
+		break;
 	case CCPU::InstructionCode::INC:
 	case CCPU::InstructionCode::DEC:
+		result += QString(" %1")
+			.arg(QString("%1%2").arg(instruction[1] & 0x80 ? 'a' : 'r').arg(instruction[1] & 0x80 ? instruction[1] & 0x07 : instruction[1] & 0x3F));
 		break;
+	}
+
+	return result;
+}
+
+void CDisassembler::SetRelocationTable(QMap<quint32, QString> const& map)
+{
+	s_mapRelocaionTable = map;
+}
+
+QString CDisassembler::Disassemble(QString const & file)
+{
+	QFile input(file);
+	input.open(QIODevice::ReadOnly);
+	if (!input.isOpen())
+		return "";
+
+	QByteArray bytes = input.readAll();
+	quint8* data = (quint8*)bytes.data();
+	s_nSymbolTableAddress = (quint32)data[0];
+	s_nDataSectionAddress = (quint32)data[4];
+	s_nCodeSectionAddress = (quint32)data[8];
+	s_nRelocationTableAddress = (quint32)data[12];
+
+	QMap<quint32, QString> map;
+	quint32 pos = s_nRelocationTableAddress;
+
+	while (1)
+	{
+		QString name((char*)(&data[pos]));
+
+		if (name == "")
+			break;
+
+		map[(quint32)data[pos + name.size() + 1]] = name;
+		pos += name.size() + 5;
+	}
+
+	SetRelocationTable(map);
+	QString result = ".code\n";
+
+	int i = 0;
+	for (quint32 pos = s_nCodeSectionAddress; pos < s_nRelocationTableAddress;)
+	{
+		if (s_mapRelocaionTable.contains(pos))
+			result += s_mapRelocaionTable[pos] + ":\n";
+		QString instruction = Disassemble(&data[pos]);
+
+		if (instruction != "nop" || !s_bSkipNop)
+			result += "    " + instruction + '\n';
+
+		pos += CCPU::s_mapInstructions[data[pos]].first;
+		s_mapLineAddresses[i++] = pos;
 	}
 
 	return result;
