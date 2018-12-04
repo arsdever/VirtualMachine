@@ -98,9 +98,36 @@ QString CDisassembler::Disassemble(quint8 instruction[8])
 		result += QString(" %1%2").arg(instruction[1] & 0x80 ? 'a' : 'r').arg(QString::number(instruction[1] & 0x80 ? instruction[1] & 0x07 : instruction[1] & 0x3F));
 		break;
 	}
+	case CCPU::InstructionCode::JMPC:
+	{
+		switch(instruction[1])
+		{
+		case CCPU::EQUAL: result = "je"; break;
+		case CCPU::NOT_EQUAL: result = "jne"; break;
+		case CCPU::ABOVE: result = "ja"; break;
+		case CCPU::ABOVE_OR_EQUAL: result = "jae"; break;
+		case CCPU::BELOW: result = "jb"; break;
+		case CCPU::BELOW_OR_EQUAL: result = "jbe"; break;
+		case CCPU::GREATER: result = "jg"; break;
+		case CCPU::GREATER_OR_EQUAL: result = "jge"; break;
+		case CCPU::LESS: result = "jl"; break;
+		case CCPU::LESS_OR_EQUAL: result = "jle"; break;
+		case CCPU::OVERFLOW_SET: result = "jo"; break;
+		case CCPU::NOT_OVERFLOW: result = "jno"; break;
+		case CCPU::SIGN_SET: result = "js"; break;
+		case CCPU::NOT_SIGN: result = "jns"; break;
+		case CCPU::PARITY_SET: result = "jp"; break;
+		case CCPU::NOT_PARITY: result = "jnp"; break;
+		}
+		quint32 address = *(quint32*)(instruction + 2);
+		if (s_mapRelocaionTable.contains(address))
+			result += QString(" %1").arg(s_mapRelocaionTable[address]);
+		else
+			result += QString(" %1h").arg(address, 8, 16, QChar('0'));
+		break;
+	}
 	case CCPU::InstructionCode::CALL:
 	case CCPU::InstructionCode::JMP:
-	case CCPU::InstructionCode::JMPC:
 	{
 		quint32 address = *(quint32*)(instruction + 1);
 		if(s_mapRelocaionTable.contains(address))
@@ -177,18 +204,23 @@ QString CDisassembler::Disassemble(QString const & file)
 	SetRelocationTable(map);
 	QString result = ".code\n";
 
-	int i = 0;
+	int i = 1;
 	for (quint32 pos = s_nCodeSectionAddress; pos < s_nRelocationTableAddress;)
 	{
 		if (s_mapRelocaionTable.contains(pos))
+		{
 			result += s_mapRelocaionTable[pos] + ":\n";
+			++i;
+		}
 		QString instruction = Disassemble(&data[pos]);
 
 		if (instruction != "nop" || !s_bSkipNop)
+		{
 			result += "    " + instruction + '\n';
 
+			s_mapLineAddresses[i++] = pos;
+		}
 		pos += CCPU::s_mapInstructions[data[pos]].first;
-		s_mapLineAddresses[i++] = pos;
 	}
 
 	return result;

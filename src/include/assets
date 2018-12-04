@@ -1,3 +1,5 @@
 #include "../assets/assets.h"
 #include "../assets/memory_changer.h"
 #include "../assets/disassembler.h"
+#include "../assets/code_editor.h"
+#include "../assets/call_stack.h"

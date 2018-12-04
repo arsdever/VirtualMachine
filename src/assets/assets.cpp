@@ -8,12 +8,13 @@
 #include <cpu>
 #include <ram>
 
+
+
 CRegisterWindow::CRegisterWindow(QWidget* pParent)
 	: QWidget(pParent)
 {
 	setWindowFlags(Qt::SubWindow);
 	setWindowTitle("General purpose registers");
-	setFixedWidth(500);
 	form.setupUi(this);
 	connect(form.m_pReg0 , SIGNAL(editingFinished()), this, SLOT(ChangeHandler()));
 	connect(form.m_pReg1 , SIGNAL(editingFinished()), this, SLOT(ChangeHandler()));
@@ -75,7 +76,6 @@ void CRegisterWindow::UpdateValues(CCPU* pCPU)
 CARegisterWindow::CARegisterWindow(QWidget* pParent)
 	: QWidget(pParent)
 {
-	setFixedWidth(200);
 	setWindowFlags(Qt::SubWindow);
 	setWindowTitle("Address registers");
 	form.setupUi(this);

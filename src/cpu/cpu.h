@@ -32,10 +32,9 @@ public:
 		quint8 GR[64];
 		bool RUN;
 		qint32 FLAGS;
-		quint32& SP;
 		quint32& SF;
+		quint32& SP;
 		quint8 INT;
-		QStack<qint32> STACK;
 		QVector<qint32> IVT;
 
 		SState()
@@ -45,13 +44,13 @@ public:
 			, GR{ 0 }
 			, RUN(true)
 			, FLAGS((EFlags)0)
-			, SP(AR[0])
-			, SF(AR[1])
+			, SF(AR[0])
+			, SP(AR[1])
 		{}
 
 		SState(SState const& c)
-			: SP(AR[0])
-			, SF(AR[1])
+			: SF(AR[0])
+			, SP(AR[1])
 		{
 			operator=(c);
 		}

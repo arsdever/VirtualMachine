@@ -18,36 +18,41 @@ VirtualMachine::VirtualMachine(QWidget *parent)
 	: QMainWindow(parent)
 	, m_cCPU()
 	, m_cDebugger()
-	, m_pEditor(new QPlainTextEdit())
+	, m_pEditor(new CCodeEditor())
 {
 	connect(&m_cDebugger, SIGNAL(Update()), this, SLOT(UpdateStatusBar()));
-	//connect(&m_cDebugger, SIGNAL(Update()), this, SLOT(UpdateStatusBar()));
 	setStatusBar(new QStatusBar());
 
-	m_cDebugger.LoadBreakpoints("./debug.pdb");
-	m_cDebugger.AttachToProcess(&m_cCPU);
+	QDockWidget* pMemoryDock = new QDockWidget("Memory", this);
+	pMemoryDock->setWidget(m_cDebugger.GetMemoryWidget());
+	pMemoryDock->setFeatures(QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetMovable);
+	addDockWidget(Qt::BottomDockWidgetArea, pMemoryDock);
 
-	QDockWidget* pRegViewDock = new QDockWidget(this);
+	QDockWidget* pRegViewDock = new QDockWidget("Registers", this);
 	pRegViewDock->setWidget(m_cDebugger.GetRegisterAreaWidget());
 	pRegViewDock->setFeatures(QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetMovable);
-	addDockWidget(Qt::BottomDockWidgetArea, pRegViewDock);
+	addDockWidget(Qt::RightDockWidgetArea, pRegViewDock);
 
-	QDockWidget* pARegViewDock = new QDockWidget(this);
+	QDockWidget* pARegViewDock = new QDockWidget("Address registers", this);
 	pARegViewDock->setWidget(m_cDebugger.GetARegisterAreaWidget());
 	pARegViewDock->setFeatures(QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetMovable);
 	addDockWidget(Qt::RightDockWidgetArea, pARegViewDock);
 
-	QDockWidget* pDebuggerDock = new QDockWidget(this);
-	pDebuggerDock->setWidget(&m_cDebugger);
-	pDebuggerDock->setFeatures(QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetMovable);
-	addDockWidget(Qt::BottomDockWidgetArea, pDebuggerDock);
+	QDockWidget* pCallStackDock = new QDockWidget("CallStack", this);
+	pCallStackDock->setWidget(m_cDebugger.GetCallStackWidget());
+	pCallStackDock->setFeatures(QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetMovable);
+	addDockWidget(Qt::RightDockWidgetArea, pCallStackDock);
 
-	
+	/*QWidget* pCentralWidget = new QWidget();
+	pCentralWidget->setLayout(new QVBoxLayout());
+	pCentralWidget->layout()->addWidget(m_pEditor);
+	CEditorNumberArea* pNumberArea = new CEditorNumberArea();
+	pNumberArea->SetDrawerWidget((CCodeEditor*)m_pEditor);
+	pCentralWidget->layout()->addWidget(pNumberArea);*/
 	m_pEditor->setReadOnly(true);
+	setCentralWidget(m_pEditor);
 
 	InitMenuBar();
-
-	setCentralWidget(m_pEditor);
 }
 
 void VirtualMachine::UpdateStatusBar()
@@ -71,15 +76,18 @@ void VirtualMachine::LoadProgram(QString const& path)
 	m_cCPU.m_sState.SF = CRAM::instance()->GetSize();
 	m_cCPU.m_sState.SP = CRAM::instance()->GetSize();
 	m_cCPU.m_sState.PC = CRAM::instance()->operator[]<quint32>(8);
-	m_cDebugger.UpdateInformation();
 	m_pEditor->setPlainText(CDisassembler::Disassemble(path));
+	m_cDebugger.AttachToProcess(&m_cCPU);
+	QString debuggerPath = path;
+	debuggerPath.replace(QRegularExpression(".ef$"), QString(".dbg"));
+	m_cDebugger.LoadBreakpoints(debuggerPath);
 }
 
 void VirtualMachine::InitMenuBar()
 {
 	QMenuBar* pMenuBar = new QMenuBar();
 	QMenu* fileMenu = pMenuBar->addMenu("File");
-	fileMenu->addAction(QIcon(":/Resources/folder_16x16.png"), "Open", this, SLOT(OnOpen()));
+	fileMenu->addAction(QIcon(":/Resources/folder_16x16.png"), "Open", this, SLOT(OnOpen()), QKeySequence("CTRL+O"));
 	m_cDebugger.PopulateMenuBar(pMenuBar);
 	setMenuBar(pMenuBar);
 }

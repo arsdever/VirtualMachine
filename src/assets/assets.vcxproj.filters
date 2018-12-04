@@ -40,6 +40,21 @@
     <ClCompile Include="disassembler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="editor_num_area.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="code_editor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="editor_addr_area.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="editor_bp_area.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="call_stack.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="assets_global.h">
@@ -48,12 +63,27 @@
     <ClInclude Include="disassembler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="editor_num_area.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="editor_addr_area.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="editor_bp_area.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="call_stack.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="assets.h">
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="memory_changer.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="code_editor.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

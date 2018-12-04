@@ -1,4 +1,5 @@
 #include "cpu.h"
+#include <core>
 #include <register>
 #include <QString>
 #include <ram>
@@ -19,7 +20,7 @@ CCPU::InstructionMap CCPU::InitMap()
 	map.insert(CCPU::BRK, QPair<quint8, CCPU::FunctionPointer>(1, &CCPU::BRK_exec));
 	map.insert(CCPU::HLT, QPair<quint8, CCPU::FunctionPointer>(1, &CCPU::HLT_exec));
 	map.insert(CCPU::CALL, QPair<quint8, CCPU::FunctionPointer>(5, &CCPU::CALL_exec));
-	map.insert(CCPU::INT, QPair<quint8, CCPU::FunctionPointer>(2, &CCPU::CALL_exec));
+	map.insert(CCPU::INT, QPair<quint8, CCPU::FunctionPointer>(2, &CCPU::INT_exec));
 	map.insert(CCPU::PUSH, QPair<quint8, CCPU::FunctionPointer>(2, &CCPU::PUSH_exec));
 	map.insert(CCPU::POP, QPair<quint8, CCPU::FunctionPointer>(2, &CCPU::POP_exec));
 	map.insert(CCPU::PUSHF, QPair<quint8, CCPU::FunctionPointer>(1, &CCPU::PUSHF_exec));
@@ -123,10 +124,12 @@ void CCPU::Run()
 	{
 		Step();
 	}
+	CallFunction<ILogger>(ILogger::InfoFunctor(QString("Execution finished")));
 }
 
 void CCPU::Step()
 {
+	CallFunction<ILogger>(ILogger::InfoFunctor(QString("Running 0x%1").arg(m_sState.PC, 8, 16, QChar('0'))));
 	if (m_sState.FLAGS & SState::IFlag)
 		HandleInterrupt();
 
@@ -137,8 +140,8 @@ void CCPU::Step()
 
 void CCPU::HandleInterrupt()
 {
-	m_sState.STACK.push(m_sState.PC);
-	m_sState.STACK.push(m_sState.FLAGS);
+	//m_sState.STACK.push(m_sState.PC);
+	//m_sState.STACK.push(m_sState.FLAGS);
 	m_sState.PC = m_sState.IVT[m_sState.INT];
 	m_sState.SF = m_sState.SP;
 	m_sState.FLAGS &= ~SState::IFlag;
@@ -154,14 +157,15 @@ void CCPU::NOP_exec() {
 }
 
 void CCPU::CALL_exec() {
-	m_sState.SP -= 4;
-
-	CRAM::instance()->operator[]<quint32>(m_sState.SP) = m_sState.PC;
+	CRAM::instance()->operator[]<quint32>(m_sState.SP -= 4) = m_sState.PC;
+	CRAM::instance()->operator[]<quint32>(m_sState.SP -= 4) = m_sState.SF;
+	m_sState.SF = m_sState.SP;
 	m_sState.PC = *(quint32*)(m_sState.IR + 1);
 }
 
 void CCPU::RET_exec() {
-	m_sState.PC = CRAM::instance()->operator[]<quint32>(m_sState.SP);
+	m_sState.SF = CRAM::instance()->operator[]<quint32>(m_sState.SP);
+	m_sState.PC = CRAM::instance()->operator[]<quint32>(m_sState.SP += 4);
 	m_sState.SP += 4;
 }
 
