@@ -1,7 +1,9 @@
 ﻿#include "debugger.h"
 #include <ram>
 #include <cpu>
+#include <vm>
 #include <assets>
+#include "call_stack.h"
 
 #include <QFile>
 #include <QPushButton>
@@ -12,52 +14,66 @@
 #include <assets>
 #include <QDate>
 #include <QMenuBar>
+#include <QLineEdit>
+#include <QLibrary>
 
-CDebugger::CDebugger()
-	: m_pProcess(nullptr)
+CDebugger::CDebugger(CVirtualMachineWindow* pParent)
+	: QObject(pParent)
+	, m_pProcess(nullptr)
 	, m_bRunning(true)
-	, m_pRegView(new CRegisterWindow())
-	, m_pARegView(new CARegisterWindow())
 	, m_pMemory(new QTextEdit())
-	, m_pCallStack(new CCallStackView())
+	, m_strCurrentInstruction("")
 {
-	connect(m_pRegView, SIGNAL(ChangeRegister(quint8, quint32)), this, SLOT(SetRegisterValue(quint8, quint32)));
+	m_lstActions.push_back(new QAction("Attach to process"));
+	connect(m_lstActions.back(), SIGNAL(triggered()), this, SLOT(AttachToProcess()));
+	m_lstActions.push_back(new QAction(QIcon(":/Resources/play_icon_16x16.png"), "Run"));
+	m_lstActions.back()->setShortcut(QKeySequence("F5"));
+	m_lstActions.back()->setDisabled(true);
+	connect(m_lstActions.back(), SIGNAL(triggered()), this, SLOT(Run()));
+	m_lstActions.push_back(new QAction(QIcon(":/Resources/step_icon_16x16.png"), "Step"));
+	m_lstActions.back()->setShortcut(QKeySequence("F10"));
+	connect(m_lstActions.back(), SIGNAL(triggered()), this, SLOT(Step()));
+	m_lstActions.back()->setDisabled(true);
+	m_lstActions.push_back(new QAction(QIcon(":/Resources/step_into_icon_16x16.png"), "Step into"));
+	m_lstActions.back()->setShortcut(QKeySequence("F11"));
+	connect(m_lstActions.back(), SIGNAL(triggered()), this, SLOT(StepInto()));
+	m_lstActions.back()->setDisabled(true);
+	m_lstActions.push_back(new QAction(QIcon(":/Resources/breakpoint_icon_16x16.png"), "Toggle breakpoint"));
+	m_lstActions.back()->setShortcut(QKeySequence("F9"));
+	connect(m_lstActions.back(), SIGNAL(triggered()), this, SLOT(SetBreakpoint()));
+	m_lstActions.back()->setDisabled(true);
+	m_lstActions.push_back(new QAction(QIcon(":/Resources/into_memory_icon_16x16.png"), "Set memory value"));
+	connect(m_lstActions.back(), SIGNAL(triggered()), this, SLOT(SetMemory()));
+	m_lstActions.back()->setDisabled(true);
+	m_lstActions.push_back(new QAction(QIcon(":/Resources/memory_icon_16x16.png"), "Show memory"));
+	m_lstActions.back()->setShortcut(QKeySequence("CTRL+M"));
+	connect(m_lstActions.back(), SIGNAL(triggered()), this, SLOT(ShowMemory()));
+	m_lstActions.back()->setDisabled(true);
+	connect(pParent->GetVM(), SIGNAL(NewProgramLoaded(QString const&)), this, SLOT(OnProgramLoaded(QString const&)));
 }
 
 void CDebugger::UpdateInformation()
-{
-	m_pRegView->UpdateValues(m_pProcess);
-	m_pARegView->UpdateValues(m_pProcess);
+{/*
+	typedef QString(*Disassembler)(QString const&);
+	Disassembler disassemble = (Disassembler)QLibrary::resolve("debugger", "Disassemble");
+
+	if (disassemble == nullptr)
+		return;*/
+
 	CallFunction<IDebugger>(IDebugger::SetRunningAddressFunctor(m_pProcess->GetState().PC));
-	m_strCurrentInstruction = CDisassembler::Disassemble(&CRAM::instance()->operator[]<quint8>(m_pProcess->GetState().PC));
+	CallFunction<IVMInformation>(IVMInformation::UpdateGRegistersInformationFunctor(m_pProcess));
+	CallFunction<IVMInformation>(IVMInformation::UpdateARegistersInformationFunctor(m_pProcess));
+	CallFunction<IVMInformation>(IVMInformation::UpdateMemoryInformationFunctor(m_pProcess->Ram()));
+	CallFunction<IVMInformation>(IVMInformation::UpdateCallStackFunctor(m_pProcess->GetState().SF, m_pProcess->Ram()));
+	//m_strCurrentInstruction = disassemble(&m_pProcess->Ram()->operator[]<quint8>(m_pProcess->GetState().PC));
+
+	// to be removed
 	UpdateMemory();
-	m_pCallStack->Clear();
-	m_pCallStack->addItems(CollectCallStack());
-	emit Update();
-}
-
-QStringList CDebugger::CollectCallStack()
-{
-	quint32 sf = m_pProcess->GetState().SF;
-	QStringList result;
-	while (sf < CRAM::instance()->GetSize())
-	{
-		quint32 ip = CRAM::instance()->operator[]<quint32>(sf + 4) - CCPU::s_mapInstructions[CCPU::CALL].first;
-		quint32 address = CRAM::instance()->operator[]<quint32>(ip + 1);
-
-		if(CDisassembler::s_mapRelocaionTable.contains(address))
-			result.push_back(CDisassembler::s_mapRelocaionTable[address]);
-		else
-			result.push_back(QString("0x%1").arg(address, 8, 16, QChar('0')));
-
-		sf = CRAM::instance()->operator[]<quint32>(sf);
-	}
-	return result;
 }
 
 void CDebugger::UpdateMemory()
 {
-	CRAM* ram = CRAM::instance();
+	CRAM* ram = m_pProcess->Ram();
 	QString text = "";
 	text.append(QString(13, ' '));
 	for (int i = 0; i < 16; ++i)
@@ -86,7 +102,7 @@ void CDebugger::SetRegisterValue(quint8 regNum, quint32 regValue)
 void CDebugger::HandleBreakpoint()
 {
 	quint32 pos = --m_pProcess->m_sState.PC;
-	CRAM* pRam = CRAM::instance();
+	CRAM* pRam = m_pProcess->Ram();
 	pRam->operator[]<quint8>(pos) = m_mapBreakpoints[pos];
 	UpdateInformation();
 	m_bRunning = false;
@@ -94,6 +110,9 @@ void CDebugger::HandleBreakpoint()
 
 void CDebugger::Run()
 {
+	if (!m_pProcess->GetState().RUN)
+		m_pProcess->Restart();
+
 	try
 	{
 		quint32 pos = m_pProcess->GetState().PC;
@@ -115,22 +134,14 @@ void CDebugger::Run()
 	}
 
 	UpdateInformation();
-	QMessageBox::information(this, "Success", "Execution finished.");
-}
-
-void CDebugger::ShowMemory()
-{
-	int m_nMemoryShowSize = 16;
-	QDialog* memory = new QDialog(this);
-	memory->setLayout(new QVBoxLayout());
-	memory->layout()->addWidget(m_pMemory);
-	memory->setWindowTitle("Memory");
-	memory->show();
-	memory->setFixedWidth((m_nMemoryShowSize * 3 + 12) * QFontMetrics(qApp->font()).width('9') + 60);
+	//QMessageBox::information(this, "Success", "Execution finished.");
 }
 
 void CDebugger::StepInto(bool b)
 {
+	if (!m_pProcess->GetState().RUN)
+		m_pProcess->Restart();
+
 	try
 	{
 		quint32 pos = m_pProcess->GetState().PC;
@@ -154,18 +165,22 @@ void CDebugger::StepInto(bool b)
 
 void CDebugger::Step()
 {
-	quint32 size = CCPU::s_mapInstructions[CRAM::instance()->operator[]<quint8>(m_pProcess->m_sState.PC)].first;
-	quint32 pos = m_pProcess->GetState().PC + size;
+	if (!m_pProcess->GetState().RUN)
+		m_pProcess->Restart();
 
-	while (m_pProcess->GetState().PC != pos && m_pProcess->m_sState.RUN)
+	quint32 size = CCPU::s_mapInstructions[m_pProcess->Ram()->operator[]<quint8>(m_pProcess->m_sState.PC)].first;
+	quint32 pos = m_pProcess->GetState().PC + size;
+	m_bRunning = true;
+
+	while (m_pProcess->GetState().PC != pos && m_pProcess->m_sState.RUN && m_bRunning)
 		StepInto(false);
 
 	UpdateInformation();
 }
 
-void CDebugger::ToggleBreakpoint()
+void CDebugger::SetBreakpoint()
 {
-	QDialog* pDialog = new QDialog(this);
+	QDialog* pDialog = new QDialog();
 	pDialog->setWindowTitle("Toggle breakpoint");
 	QLineEdit* pLineNumber = new QLineEdit(pDialog);
 	QPushButton* pSubmit = new QPushButton("Toggle", pDialog);
@@ -185,48 +200,30 @@ void CDebugger::ToggleBreakpoint()
 	delete pDialog;
 }
 
-void CDebugger::XDebugger::SetBreakpoint(quint32 address)
+void CDebugger::OnProgramLoaded(QString const& strNewPath)
 {
-	if (m_pThis->m_mapBreakpoints.contains(address))
+	QString debuggerPath = strNewPath;
+	debuggerPath.replace(QRegExp(".ef$"), QString(".dbg"));
+	CVirtualMachine* pVM = dynamic_cast<CVirtualMachine*>(sender());
+	if (pVM == nullptr)
 		return;
 
-	m_pThis->SetBreakpoint(address);
+	if (m_pProcess == nullptr || !pVM->GetCPUIDList().contains(m_pProcess->GetUUID()))
+		return;
+
+	LoadBreakpoints(debuggerPath);
+	UpdateInformation();
 }
 
 void CDebugger::SetBreakpoint(quint32 address)
 {
-	CRAM * pRam = CRAM::instance();
-	m_mapBreakpoints[address] = CRAM::instance()->operator[]<quint8>(address);
+	if (m_pProcess == nullptr)
+		throw process_not_attached();
+
+	CRAM * pRam = m_pProcess->Ram();
+	m_mapBreakpoints[address] = m_pProcess->Ram()->operator[]<quint8>(address);
 	pRam->operator[]<quint8>(address) = CCPU::InstructionCode::BRK;
 	UpdateMemory();
-}
-
-void CDebugger::XDebugger::UnsetBreakpoint(quint32 address)
-{
-	if (!m_pThis->m_mapBreakpoints.contains(address))
-		return;
-
-	CRAM * pRam = CRAM::instance();
-	CRAM::instance()->operator[]<quint8>(address) = m_pThis->m_mapBreakpoints[address];
-	m_pThis->m_mapBreakpoints.remove(address);
-	m_pThis->UpdateMemory();
-}
-
-void CDebugger::XDebugger::ClearBreakpoints()
-{
-	m_pThis->m_mapBreakpoints = QMap<quint32, quint8>();
-}
-
-void CDebugger::XDebugger::ToggleBreakpoint(quint32 address)
-{
-	if (m_pThis->m_mapBreakpoints.contains(address))
-		UnsetBreakpoint(address);
-	else
-		SetBreakpoint(address);
-}
-void CDebugger::XDebugger::SetRunningAddress(quint32 address)
-{
-
 }
 
 void CDebugger::SetMemory()
@@ -238,16 +235,16 @@ void CDebugger::SetMemory()
 	case -1:
 		return;
 	case 0:
-		CRAM::instance()->operator[]<quint8>(address) = (quint8)data;
+		m_pProcess->Ram()->operator[]<quint8>(address) = (quint8)data;
 		break;
 	case 1:
-		CRAM::instance()->operator[]<quint16>(address) = (quint16)data;
+		m_pProcess->Ram()->operator[]<quint16>(address) = (quint16)data;
 		break;
 	case 2:
-		CRAM::instance()->operator[]<quint32>(address) = (quint32)data;
+		m_pProcess->Ram()->operator[]<quint32>(address) = (quint32)data;
 		break;
 	case 3:
-		CRAM::instance()->operator[]<quint64>(address) = (quint64)data;
+		m_pProcess->Ram()->operator[]<quint64>(address) = (quint64)data;
 		break;
 	}
 
@@ -272,9 +269,25 @@ void CDebugger::LoadBreakpoints(QString const& path)
 	}
 }
 
-void CDebugger::AttachToProcess(CCPU* pCPU)
+QList<QAction*> CDebugger::GetActions() const
 {
-	m_pProcess = pCPU;
+	return m_lstActions;
+}
+
+void CDebugger::AttachToProcess()
+{
+	CVirtualMachineWindow* parentWidget = dynamic_cast<CVirtualMachineWindow*>(parent());
+	CVirtualMachine* vm = parentWidget->GetVM();
+	CCPUListDialog dialog(vm);
+
+	dialog.exec();
+
+	if (dialog.GetSelection() != "")
+		m_pProcess = vm->GetCPUByID(dialog.GetSelection());
+
+	for (QAction* action : GetActions())
+		action->setEnabled(true);
+
 	UpdateInformation();
 }
 
@@ -283,31 +296,85 @@ void CDebugger::Detach()
 	m_pProcess = nullptr;
 }
 
-void CDebugger::ToggleRegisters()
+// IDebugger implementation --------------------------------------------------------------------------------------------
+
+void CDebugger::XDebugger::SetBreakpoint(quint32 address)
 {
-	if(m_pRegView->isHidden())
-		m_pRegView->show();
-	else
-		m_pRegView->hide();
+	if (m_pThis->m_mapBreakpoints.contains(address))
+		return;
+
+	m_pThis->SetBreakpoint(address);
 }
 
-void CDebugger::ToggleARegisters()
+void CDebugger::XDebugger::UnsetBreakpoint(quint32 address)
 {
-	if (m_pARegView->isHidden())
-		m_pARegView->show();
-	else
-		m_pARegView->hide();
+	if (!m_pThis->m_mapBreakpoints.contains(address))
+		return;
+
+	m_pThis->m_pProcess->Ram()->operator[]<quint8>(address) = m_pThis->m_mapBreakpoints[address];
+	m_pThis->m_mapBreakpoints.remove(address);
+	m_pThis->UpdateMemory();
 }
 
-void CDebugger::PopulateMenuBar(QMenuBar* pMenuBar)
+void CDebugger::XDebugger::ClearBreakpoints()
 {
+	m_pThis->m_mapBreakpoints = QMap<quint32, quint8>();
+}
+
+void CDebugger::XDebugger::ToggleBreakpoint(quint32 address)
+{
+	if (m_pThis->m_mapBreakpoints.contains(address))
+		UnsetBreakpoint(address);
+	else
+		SetBreakpoint(address);
+}
+
+//----------------------------------------------------------------------------------------------------------------------
+
+#include <QDockWidget>
+
+extern "C" DEBUGGER_EXPORT bool LoadPlugin(QMainWindow* pMainWindow)
+{
+	CVirtualMachineWindow* pVMWindow = dynamic_cast<CVirtualMachineWindow*>(pMainWindow);
+	if (pVMWindow == nullptr)
+		return false;
+
+	CDebugger* pDebugger = new CDebugger(pVMWindow);
+
+	QDockWidget* pMemoryDock = new QDockWidget("Memory", pMainWindow);
+	pMemoryDock->setWidget(pDebugger->GetMemoryWidget());
+	pMemoryDock->setFeatures(QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetMovable);
+	pMainWindow->addDockWidget(Qt::BottomDockWidgetArea, pMemoryDock);
+
+	CGRegisterWindow* pGPRWindow = new CGRegisterWindow();
+	CARegisterWindow* pARWindow = new CARegisterWindow();
+	CCallStackView* pCallStack = new CCallStackView();
+
+	QDockWidget* pRegViewDock = new QDockWidget("Registers", pMainWindow);
+	pRegViewDock->setWidget(pGPRWindow);
+	pRegViewDock->setFeatures(QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetMovable);
+	pMainWindow->addDockWidget(Qt::LeftDockWidgetArea, pRegViewDock);
+
+	QDockWidget* pARegViewDock = new QDockWidget("Address registers", pMainWindow);
+	pARegViewDock->setWidget(pARWindow);
+	pARegViewDock->setFeatures(QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetMovable);
+	pMainWindow->addDockWidget(Qt::RightDockWidgetArea, pARegViewDock);
+
+	QDockWidget* pCallStackDock = new QDockWidget("CallStack", pMainWindow);
+	pCallStackDock->setWidget(pCallStack);
+	pCallStackDock->setFeatures(QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetMovable);
+	pMainWindow->addDockWidget(Qt::RightDockWidgetArea, pCallStackDock);
+
+	QMenuBar* pMenuBar = pMainWindow->menuBar();
+	if (pMenuBar == nullptr)
+		return true;
 	QMenu* pMenu = pMenuBar->addMenu("Debug");
-	pMenu->addAction(QIcon(":/Resources/play_icon_16x16.png"), "Run", this, SLOT(Run()), QKeySequence("F5"));
-	pMenu->addAction(QIcon(":/Resources/step_icon_16x16.png"), "Step", this, SLOT(Step()), QKeySequence("F10"));
-	pMenu->addAction(QIcon(":/Resources/step_into_icon_16x16.png"), "Step into", this, SLOT(StepInto()), QKeySequence("F11"));
-	pMenu->addAction(QIcon(":/Resources/breakpoint_icon_16x16.png"), "Toggle breakpoint", this, SLOT(SetBreakpoint()), QKeySequence("F9"));
-	pMenu->addAction(QIcon(":/Resources/into_memory_icon_16x16.png"), "Set memory value", this, SLOT(SetMemory()));
-	pMenu->addAction(QIcon(":/Resources/memory_icon_16x16.png"), "Show memory", this, SLOT(ShowMemory()), QKeySequence("CTRL+M"));
-	pMenu->addAction("Show/hide general porpuse registers"), this, SLOT(ToggleRegisters());
-	pMenu->addAction("Show/hide address registers"), this, SLOT(ToggleARegisters());
+	for (QAction* action : pDebugger->GetActions())
+		pMenu->addAction(action);
+	/*
+	pMenu->addAction("Show/hide general porpuse registers"), pGPRWindow, SLOT(ToggleView());
+	pMenu->addAction("Show/hide address registers"), pARWindow, SLOT(ToggleView());
+	*/
+
+	return true;
 }

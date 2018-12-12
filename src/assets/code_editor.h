@@ -1,42 +1,35 @@
 #pragma once
 
+#include "editor_interfaces.h"
 #include "assets_global.h"
 #include <QPlainTextEdit>
 #include "editor_num_area.h"
 #include "editor_addr_area.h"
 #include "editor_bp_area.h"
-#include <core>
 
 class QResizeEvent;
+class QDragEnterEvent;
+class QDropEvent;
 
 class ASSETS_EXPORT CCodeEditor : public QPlainTextEdit
 {
 
 	Q_OBJECT
 
-	REGISTER_INTERFACE(CCodeEditor, Debugger)
+	IMPLEMENT_BEGIN(CCodeEditor, Debugger)
 		virtual void SetBreakpoint(quint32) override;
 		virtual void UnsetBreakpoint(quint32) override;
 		virtual void ToggleBreakpoint(quint32) override;
 		virtual void SetRunningAddress(quint32) override;
 		virtual void ClearBreakpoints() override;
-	REGISTER_INTERFACE_END(Debugger)
+	IMPLEMENT_END(Debugger)
+
+	IMPLEMENT_BEGIN(CCodeEditor, EditorNumberAreaImplementer)
+		virtual void DrawDecoration(QPaintEvent* pEvent, QWidget* pWidget) const override;
+		virtual QSize GetWidgetSizeHint() const override;
+	IMPLEMENT_END(EditorNumberAreaImplementer)
 
 private:
-	class CEditorNumberAreaImplementer
-	{
-		CEditorNumberAreaImplementer()
-		{
-			m_pThis = (CCodeEditor*)((unsigned long long)this - (unsigned long long)(&((CCodeEditor*)0)->m_xEditorNumberAreaImplementer));
-		}
-		friend class CEditorNumberArea;
-		friend class CCodeEditor;
-
-		void DrawDecoration(QPaintEvent* pEvent, QWidget* pWidget) const;
-		QSize GetWidgetSizeHint() const;
-		CCodeEditor* m_pThis;
-	} m_xEditorNumberAreaImplementer;
-
 	class CEditorAddressAreaImplementer
 	{
 		CEditorAddressAreaImplementer()
@@ -69,9 +62,12 @@ private:
 public:
 	CCodeEditor();
 	~CCodeEditor();
-	const CEditorNumberAreaImplementer* GetNumberAreaDecorator() const { return &m_xEditorNumberAreaImplementer; }
+	const IEditorNumberAreaImplementer* GetNumberAreaDecorator() const { return &m_xEditorNumberAreaImplementer; }
 	const CEditorAddressAreaImplementer* GetAddressAreaDecorator() const { return &m_xEditorAddressAreaImplementer; }
 	const CEditorBPAreaImplementer* GetBPAreaDecorator() const { return &m_xEditorBPAreaImplementer; }
+
+protected:
+	void keyPressEvent(QKeyEvent* event) override;
 
 private slots:
 	void updateAreaWidth(int);

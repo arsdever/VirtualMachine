@@ -31,16 +31,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="assets.cpp">
+    <ClCompile Include="editor_num_area.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="memory_changer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="disassembler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="editor_num_area.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="code_editor.cpp">
@@ -52,18 +46,32 @@
     <ClCompile Include="editor_bp_area.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="call_stack.cpp">
+    <ClCompile Include="gpr_window.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ar_window.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="editor_interfaces.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <QtMoc Include="code_editor.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="memory_changer.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="gpr_window.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="ar_window.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+  </ItemGroup>
+  <ItemGroup>
     <ClInclude Include="assets_global.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="disassembler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="editor_num_area.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="editor_addr_area.h">
@@ -72,27 +80,11 @@
     <ClInclude Include="editor_bp_area.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="call_stack.h">
+    <ClInclude Include="editor_num_area.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <QtMoc Include="assets.h">
+    <ClInclude Include="editor_interfaces.h">
       <Filter>Header Files</Filter>
-    </QtMoc>
-    <QtMoc Include="memory_changer.h">
-      <Filter>Header Files</Filter>
-    </QtMoc>
-    <QtMoc Include="code_editor.h">
-      <Filter>Header Files</Filter>
-    </QtMoc>
-  </ItemGroup>
-  <ItemGroup>
-    <QtUic Include="registerwindow.ui">
-      <Filter>Form Files</Filter>
-    </QtUic>
-    <QtUic Include="aregisterwindow.ui">
-      <Filter>Form Files</Filter>
-    </QtUic>
+    </ClInclude>
   </ItemGroup>
 </Project>

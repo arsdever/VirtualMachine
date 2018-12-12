@@ -1,74 +1,73 @@
 #pragma once
 
 #include "debugger_global.h"
-#include <QMainWindow>
 #include <QMap>
 #include <core>
+#include <QList>
 
 class QPushButton;
 class CCPU;
-class CRegisterWindow;
-class CARegisterWindow;
-class CCallStackView;
 class QTextEdit;
 class QMenuBar;
+class QAction;
+class CVirtualMachineWindow;
 
-class DEBUGGER_EXPORT CDebugger : public QWidget
+class DEBUGGER_EXPORT CDebugger : public QObject
 {
 
 	Q_OBJECT
 
-	REGISTER_INTERFACE(CDebugger, Debugger)
+	IMPLEMENT_BEGIN(CDebugger, Debugger)
 		virtual void SetBreakpoint(quint32) override;
 		virtual void UnsetBreakpoint(quint32) override;
 		virtual void ToggleBreakpoint(quint32) override;
-		virtual void SetRunningAddress(quint32) override;
+		virtual void SetRunningAddress(quint32) override {}
 		virtual void ClearBreakpoints() override;
-		REGISTER_INTERFACE_END(Debugger)
+	IMPLEMENT_END(Debugger)
 
 public:
-	CDebugger();
+	CDebugger(CVirtualMachineWindow* pParent = nullptr);
 	
 	void HandleBreakpoint();
 	void LoadBreakpoints(QString const& path);
 
-	void AttachToProcess(CCPU* pCPU);
+	QList<QAction*> GetActions() const;
+
 	void Detach();
 
-	CRegisterWindow* GetRegisterAreaWidget() const { return m_pRegView; }
-	CARegisterWindow* GetARegisterAreaWidget() const { return m_pARegView; }
-	CCallStackView* GetCallStackWidget() const { return m_pCallStack; }
 	QTextEdit* GetMemoryWidget() const { return m_pMemory; }
 	QString GetCurrentInstruction() const { return m_strCurrentInstruction; }
-	void PopulateMenuBar(QMenuBar* pMenuBar);
-	QStringList CollectCallStack();
 
-	void UpdateInformation();
 	void UpdateMemory();
 
 public slots:
+
+	// CPU manipulators
+
 	void Run();
 	void Step();
 	void StepInto(bool b = true);
+
+	// Management
+
 	void SetBreakpoint(quint32 address);
-	void ToggleBreakpoint();
+	void SetBreakpoint();
 	void SetMemory();
-	void ShowMemory();
+	void AttachToProcess();
 	void SetRegisterValue(quint8, quint32);
-
-	void ToggleRegisters();
-	void ToggleARegisters();
-
-signals:
-	void Update();
+	void UpdateInformation();
+	void OnProgramLoaded(QString const& strNewPath);
 
 private:
 	QMap<quint32, quint8> m_mapBreakpoints;
 	CCPU* m_pProcess;
-	CRegisterWindow* m_pRegView;
-	CARegisterWindow* m_pARegView;
 	QTextEdit* m_pMemory;
-	CCallStackView* m_pCallStack;
 	QString m_strCurrentInstruction;
 	bool m_bRunning;
+
+	QList<QAction*> m_lstActions;
+
+public:
+	struct debugger_exception : public std::exception {};
+	struct process_not_attached : debugger_exception {};
 };

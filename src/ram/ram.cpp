@@ -10,12 +10,3 @@ CRAM::CRAM(quint32 nSize)
 CRAM::~CRAM()
 {
 }
-
-CRAM* CRAM::pinstance = nullptr;
-CRAM* CRAM::instance()
-{
-	if (pinstance == nullptr)
-		return pinstance = new CRAM();
-
-	return pinstance;
-}

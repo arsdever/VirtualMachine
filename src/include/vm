@@ -1,0 +1,3 @@
+#include "../vm/virtualmachinewindow.h"
+#include "../vm/virtualmachine.h"
+#include "../vm/cpu_list_dialog.h"

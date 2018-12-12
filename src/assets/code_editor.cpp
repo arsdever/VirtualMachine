@@ -3,7 +3,7 @@
 #include <QPaintEvent>
 #include <QPainter>
 #include <QTextBlock>
-#include "disassembler.h"
+#include <QLibrary>
 
 CCodeEditor::CCodeEditor()
 	: m_pNumberArea(new CEditorNumberArea(this))
@@ -63,6 +63,8 @@ void CCodeEditor::XDebugger::ToggleBreakpoint(quint32 address)
 		UnsetBreakpoint(address);
 	else
 		SetBreakpoint(address);
+
+	m_pThis->update();
 }
 
 void CCodeEditor::XDebugger::SetRunningAddress(quint32 address)
@@ -71,7 +73,7 @@ void CCodeEditor::XDebugger::SetRunningAddress(quint32 address)
 	m_pThis->update();
 }
 
-QSize CCodeEditor::CEditorNumberAreaImplementer::GetWidgetSizeHint() const
+QSize CCodeEditor::XEditorNumberAreaImplementer::GetWidgetSizeHint() const
 {
 	int digits = 1;
 	int max = qMax(1, m_pThis->blockCount());
@@ -87,7 +89,7 @@ QSize CCodeEditor::CEditorNumberAreaImplementer::GetWidgetSizeHint() const
 	return QSize(space + 10, 0);
 }
 
-void CCodeEditor::CEditorNumberAreaImplementer::DrawDecoration(QPaintEvent* pEvent, QWidget* pWidget) const
+void CCodeEditor::XEditorNumberAreaImplementer::DrawDecoration(QPaintEvent* pEvent, QWidget* pWidget) const
 {
 	QPainter painter(pWidget);
 	painter.setRenderHints(QPainter::Antialiasing);
@@ -144,6 +146,17 @@ void CCodeEditor::CEditorAddressAreaImplementer::DrawDecoration(QPaintEvent* pEv
 	QPainter painter(pWidget);
 	painter.setRenderHints(QPainter::Antialiasing);
 	painter.fillRect(pEvent->rect(), QColor(210, 210, 210));
+
+	typedef bool(*Validator)(quint32, quint32*);
+	Validator validate = (Validator)QLibrary::resolve(QString("debugger")
+#ifdef _DEBUG
+		+ "d"
+#endif
+	, "LineToAddress");
+
+	if (validate == nullptr)
+		return;
+
 	QTextBlock block = m_pThis->firstVisibleBlock();
 	int blockNumber = block.blockNumber();
 	int top = (int)m_pThis->blockBoundingGeometry(block).translated(m_pThis->contentOffset()).top();
@@ -151,12 +164,13 @@ void CCodeEditor::CEditorAddressAreaImplementer::DrawDecoration(QPaintEvent* pEv
 	while (block.isValid() && top <= pEvent->rect().bottom()) {
 		if (block.isVisible() && bottom >= pEvent->rect().top()) {
 			int lineNumber = blockNumber;
+			quint32 address = 0;
 
-			if (CDisassembler::s_mapLineAddresses.contains(lineNumber))
+			if (validate(lineNumber, &address))
 			{
 				painter.setPen(Qt::black);
 				painter.drawText(5, top, pWidget->width() - 10, m_pThis->fontMetrics().height(),
-					Qt::AlignRight, QString("0x%1").arg(CDisassembler::s_mapLineAddresses[lineNumber], 8, 16, QChar('0')));
+					Qt::AlignRight, QString("0x%1").arg(address, 8, 16, QChar('0')));
 
 			}
 		}
@@ -178,6 +192,17 @@ void CCodeEditor::CEditorBPAreaImplementer::DrawDecoration(QPaintEvent* pEvent, 
 	QPainter painter(pWidget);
 	painter.setRenderHints(QPainter::Antialiasing);
 	painter.fillRect(pEvent->rect(), QColor(210, 210, 210));
+
+	typedef bool(*Validator)(quint32, quint32*);
+	Validator validate = (Validator)QLibrary::resolve(QString("debugger")
+#ifdef _DEBUG
+		+ "d"
+#endif
+	, "LineToAddress");
+
+	if (validate == nullptr)
+		return;
+
 	QTextBlock block = m_pThis->firstVisibleBlock();
 	int blockNumber = block.blockNumber();
 	int top = (int)m_pThis->blockBoundingGeometry(block).translated(m_pThis->contentOffset()).top();
@@ -185,18 +210,19 @@ void CCodeEditor::CEditorBPAreaImplementer::DrawDecoration(QPaintEvent* pEvent, 
 	while (block.isValid() && top <= pEvent->rect().bottom()) {
 		if (block.isVisible() && bottom >= pEvent->rect().top()) {
 			int lineNumber = blockNumber;
+			quint32 address = 0;
 
-			if (CDisassembler::s_mapLineAddresses.contains(lineNumber))
+			if (validate(lineNumber, &address))
 			{
 
-				if (m_pThis->m_lstBreakpoints.indexOf(CDisassembler::s_mapLineAddresses[lineNumber]) >= 0)
+				if (m_pThis->m_lstBreakpoints.indexOf(address) >= 0)
 				{
 					painter.setPen(QPen(Qt::white, 2));
 					painter.setBrush(Qt::red);
 					painter.drawEllipse(2, top + 2, m_pThis->fontMetrics().height() - 4, m_pThis->fontMetrics().height() - 4);
 				}
 
-				if (CDisassembler::s_mapLineAddresses[lineNumber] == m_pThis->m_nCurrentAddress)
+				if (address == m_pThis->m_nCurrentAddress)
 				{
 					painter.setPen(QPen(QColor(14,65,14), 1));
 					painter.setBrush(Qt::green);
@@ -219,6 +245,16 @@ void CCodeEditor::CEditorBPAreaImplementer::DrawDecoration(QPaintEvent* pEvent, 
 
 void CCodeEditor::CEditorBPAreaImplementer::PressedAt(QMouseEvent* pEvent) const
 {
+	typedef bool(*Validator)(quint32, quint32*);
+	Validator validate = (Validator)QLibrary::resolve(QString("debugger")
+#ifdef _DEBUG
+		+ "d"
+#endif
+	, "LineToAddress");
+
+	if (validate == nullptr)
+		return;
+
 	QTextBlock block = m_pThis->firstVisibleBlock();
 	int blockNumber = block.blockNumber();
 	int top = (int)m_pThis->blockBoundingGeometry(block).translated(m_pThis->contentOffset()).top();
@@ -226,9 +262,11 @@ void CCodeEditor::CEditorBPAreaImplementer::PressedAt(QMouseEvent* pEvent) const
 	while (block.isValid() && top <= m_pThis->visibleRegion().boundingRect().bottom()) {
 		if (block.isVisible() && bottom >= m_pThis->visibleRegion().boundingRect().top()) {
 			qint32 value = pEvent->pos().y();
-			if (value >= top && value <= bottom)
+			quint32 address = 0;
+
+			if (value >= top && value <= bottom && validate(blockNumber, &address))
 			{
-				CallFunction<IDebugger>(IDebugger::ToggleBreakpointFunctor(CDisassembler::s_mapLineAddresses[blockNumber]));
+				CallFunction<IDebugger>(IDebugger::ToggleBreakpointFunctor(address));
 				m_pThis->update();
 				return;
 			}
@@ -240,3 +278,5 @@ void CCodeEditor::CEditorBPAreaImplementer::PressedAt(QMouseEvent* pEvent) const
 		}
 	}
 }
+void CCodeEditor::keyPressEvent(QKeyEvent* event)
+{}

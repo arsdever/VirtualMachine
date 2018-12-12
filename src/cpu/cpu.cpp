@@ -1,9 +1,10 @@
 #include "cpu.h"
+
 #include <core>
-#include <register>
-#include <QString>
 #include <ram>
-#include "../debugger/debugger.h"
+
+#include <QString>
+#include <QUuid>
 
 #define REGISTER_EXECUTER(__instruction, __sz1, __sz2, __sz3, __sz4)\
 map.insert(CCPU::##__instruction## | (CCPU::BYTE << 8), QPair<quint8, CCPU::FunctionPointer>(##__sz1##, &CCPU::##__instruction##_exec<qint8>)); \
@@ -54,20 +55,33 @@ CCPU::InstructionMap CCPU::InitMap()
 
 CCPU::InstructionMap CCPU::s_mapInstructions = CCPU::InitMap();
 
-CCPU::CCPU()
+CCPU::CCPU(CRAM* pRam)
 	: m_sState()
 	, m_fptrExecuter(nullptr)
+	, m_pRam(pRam)
+	, m_strUUID("CPU-" + QUuid::createUuid().toString())
 {
+}
+
+QString CCPU::GetUUID() const
+{
+	return m_strUUID;
+}
+
+void CCPU::Restart()
+{ 
+	m_sState.SF = m_pRam->GetSize();
+	m_sState.SP = m_pRam->GetSize();
+	m_sState.PC = m_pRam->operator[]<quint32>(8);
+	m_sState.RUN = true;
 }
 
 void CCPU::Fetch()
 {
-	CRAM* pRam = CRAM::instance();
-
-	if (pRam == nullptr)
+	if (m_pRam == nullptr)
 		throw ram_not_found_exception();
 
-	*((quint64*)m_sState.IR) = pRam->operator[]<quint64>(m_sState.PC);
+	*((quint64*)m_sState.IR) = m_pRam->operator[]<quint64>(m_sState.PC);
 }
 
 quint8 CCPU::Decode()
@@ -104,6 +118,12 @@ quint8 CCPU::Decode()
 
 void CCPU::Execute()
 {
+	if (m_fptrExecuter == nullptr)
+	{
+		m_sState.RUN = false;
+		throw invalid_function_call();
+	}
+
 	std::invoke(m_fptrExecuter, this);
 }
 //
@@ -130,7 +150,7 @@ void CCPU::Run()
 void CCPU::Step()
 {
 	CallFunction<ILogger>(ILogger::InfoFunctor(QString("Running 0x%1").arg(m_sState.PC, 8, 16, QChar('0'))));
-	if (m_sState.FLAGS & SState::IFlag)
+	if (m_sState.RUN && m_sState.FLAGS & SState::IFlag)
 		HandleInterrupt();
 
 	Fetch();
@@ -142,9 +162,9 @@ void CCPU::HandleInterrupt()
 {
 	//m_sState.STACK.push(m_sState.PC);
 	//m_sState.STACK.push(m_sState.FLAGS);
-	m_sState.PC = m_sState.IVT[m_sState.INT];
-	m_sState.SF = m_sState.SP;
-	m_sState.FLAGS &= ~SState::IFlag;
+	//m_sState.PC = m_sState.IVT[m_sState.INT];
+	//m_sState.SF = m_sState.SP;
+	//m_sState.FLAGS &= ~SState::IFlag;
 }
 
 // instruction implementation
@@ -157,21 +177,21 @@ void CCPU::NOP_exec() {
 }
 
 void CCPU::CALL_exec() {
-	CRAM::instance()->operator[]<quint32>(m_sState.SP -= 4) = m_sState.PC;
-	CRAM::instance()->operator[]<quint32>(m_sState.SP -= 4) = m_sState.SF;
+	m_pRam->operator[]<quint32>(m_sState.SP -= 4) = m_sState.PC;
+	m_pRam->operator[]<quint32>(m_sState.SP -= 4) = m_sState.SF;
 	m_sState.SF = m_sState.SP;
 	m_sState.PC = *(quint32*)(m_sState.IR + 1);
 }
 
 void CCPU::RET_exec() {
-	m_sState.SF = CRAM::instance()->operator[]<quint32>(m_sState.SP);
-	m_sState.PC = CRAM::instance()->operator[]<quint32>(m_sState.SP += 4);
+	m_sState.SF = m_pRam->operator[]<quint32>(m_sState.SP);
+	m_sState.PC = m_pRam->operator[]<quint32>(m_sState.SP += 4);
 	m_sState.SP += 4;
 }
 
 void CCPU::INT_exec() {
 	m_sState.FLAGS |= SState::IFlag;
-	m_sState.INT = m_sState.IR[1];
+//	m_sState.INT = m_sState.IR[1];
 }
 
 void CCPU::BRK_exec() {
@@ -190,14 +210,14 @@ void CCPU::PUSH_exec() {
 		if ((m_sState.IR[1] & 0x07) > 5)
 			throw invalid_register_exception();
 
-		CRAM::instance()->operator[]<quint32>(m_sState.SP) = m_sState.AR[m_sState.IR[1] & 0x07];
+		m_pRam->operator[]<quint32>(m_sState.SP) = m_sState.AR[m_sState.IR[1] & 0x07];
 	}
 	else
 	{
 		if ((m_sState.IR[2] & 0x3F) + 4 > 64)
 			throw invalid_register_exception();
 
-		CRAM::instance()->operator[]<quint32>(m_sState.SP) = *(quint32*)(m_sState.GR + m_sState.IR[1]);
+		m_pRam->operator[]<quint32>(m_sState.SP) = *(quint32*)(m_sState.GR + m_sState.IR[1]);
 	}
 }
 
@@ -207,25 +227,25 @@ void CCPU::POP_exec() {
 		if ((m_sState.IR[1] & 0x07) > 5)
 			throw invalid_register_exception();
 
-		m_sState.AR[m_sState.IR[1] & 0x07] = CRAM::instance()->operator[]<quint32>(m_sState.SP);
+		m_sState.AR[m_sState.IR[1] & 0x07] = m_pRam->operator[]<quint32>(m_sState.SP);
 	}
 	else
 	{
 		if ((m_sState.IR[2] & 0x3F) + 4 > 64)
 			throw invalid_register_exception();
 
-		(quint32&)m_sState.GR[m_sState.IR[1]] = CRAM::instance()->operator[]<quint32>(m_sState.SP);
+		(quint32&)m_sState.GR[m_sState.IR[1]] = m_pRam->operator[]<quint32>(m_sState.SP);
 	}
 	m_sState.SP += 4;
 }
 
 void CCPU::PUSHF_exec() {
 	m_sState.SP -= 4;
-	CRAM::instance()->operator[]<quint32>(m_sState.SP) = m_sState.FLAGS;
+	m_pRam->operator[]<quint32>(m_sState.SP) = m_sState.FLAGS;
 }
 
 void CCPU::POPF_exec() {
-	m_sState.FLAGS = CRAM::instance()->operator[]<quint32>(m_sState.SP);
+	m_sState.FLAGS = m_pRam->operator[]<quint32>(m_sState.SP);
 	m_sState.SP += 4;
 }
 
@@ -391,16 +411,16 @@ void CCPU::ASG_exec() {
 
 void CCPU::LOD_exec() {
 	if(m_sState.IR[1] & 0x80)
-		(quint32&)m_sState.AR[m_sState.IR[1] & 0x07] = (quint32)CRAM::instance()->operator[]<quint32>(m_sState.AR[m_sState.IR[2] & 0x07]);
+		(quint32&)m_sState.AR[m_sState.IR[1] & 0x07] = (quint32)m_pRam->operator[]<quint32>(m_sState.AR[m_sState.IR[2] & 0x07]);
 	else
-		(quint32&)m_sState.GR[m_sState.IR[1] & 0x3F] = (quint32)CRAM::instance()->operator[]<quint32>(m_sState.AR[m_sState.IR[2] & 0x07]);
+		(quint32&)m_sState.GR[m_sState.IR[1] & 0x3F] = (quint32)m_pRam->operator[]<quint32>(m_sState.AR[m_sState.IR[2] & 0x07]);
 }
 
 void CCPU::STR_exec() {
 	if (m_sState.IR[1] & 0x80)
-		(quint32&)CRAM::instance()->operator[]<quint32>(m_sState.AR[m_sState.IR[2] & 0x07]) = *(quint32*)(m_sState.AR + (m_sState.IR[1] & 0x07));
+		(quint32&)m_pRam->operator[]<quint32>(m_sState.AR[m_sState.IR[2] & 0x07]) = *(quint32*)(m_sState.AR + (m_sState.IR[1] & 0x07));
 	else
-		(quint32&)CRAM::instance()->operator[]<quint32>(m_sState.AR[m_sState.IR[2] & 0x07]) = *(quint32*)(m_sState.GR + (m_sState.IR[1] & 0x3F));
+		(quint32&)m_pRam->operator[]<quint32>(m_sState.AR[m_sState.IR[2] & 0x07]) = *(quint32*)(m_sState.GR + (m_sState.IR[1] & 0x3F));
 }
 
 void CCPU::CMP_exec() {

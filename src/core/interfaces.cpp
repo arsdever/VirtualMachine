@@ -1,6 +1,8 @@
 #include "interfaces.h"
+#include <QUuid>
 
 IUnknown::~IUnknown() {}
 
-const QString ILogger::UUID				= "F197B796-20AE-4040-8550-36CC0998C37D";
-const QString IDebugger::UUID			= "0E0535AA-2FED-4FF3-B853-3D7610938308";
+const QString ILogger::UUID				= QUuid::createUuid().toString();
+const QString IDebugger::UUID			= QUuid::createUuid().toString();
+const QString IVMInformation::UUID		= QUuid::createUuid().toString();

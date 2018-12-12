@@ -1,33 +1,50 @@
 #pragma once
 
-#include <QMainWindow>
-#include <ram>
-#include <cpu>
-#include "../debugger/debugger.h"
+#include "vm_global.h"
+
+#include <exception>
+
+#include <QObject>
+#include <QSet>
 
 class CCPU;
+class CRAM;
 class CDebugger;
-class QPlainTextEdit;
 
-class VirtualMachine : public QMainWindow
+class VM_EXPORT CVirtualMachine : public QObject
 {
+
 	Q_OBJECT
 
 public:
-	VirtualMachine(QWidget *parent = Q_NULLPTR);
-	~VirtualMachine() {};
+	CVirtualMachine(quint32 nRamSize = 0xffff, quint32 nCoreCount = 1, QObject* pParent = nullptr);
+	~CVirtualMachine();
 
+	void DeployCPU();
+	CCPU* GetCPU() const;
+	CCPU* GetCPUByID(QString const& id) const;
+	QStringList GetCPUIDList() const;
 	void LoadProgram(QString const& path);
-	void InitMenuBar();
-	
-protected:
-	void UpdateStatusBar();
-	
-protected slots:
-	void OnOpen();
+
+	CRAM* RAM() const;
+	void SetRAM(CRAM* pRAM);
+
+	CDebugger* Debugger() const;
+	void SetDebugger(CDebugger* pDebugger);
+
+signals:
+	void NewProgramLoaded(QString const&);
+
+public slots:
+	void Run();
 
 private:
-	CCPU m_cCPU;
-	CDebugger m_cDebugger;
-	QPlainTextEdit* m_pEditor;
+	QSet<CCPU*> m_setCPU;
+	CRAM* m_pRAM;
+	CDebugger* m_pDebugger;
+
+public:
+	struct vm_exception : public std::exception {};
+	struct invalid_file : vm_exception {};
 };
+

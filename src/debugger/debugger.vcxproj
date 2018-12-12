@@ -108,10 +108,14 @@
     </QtRcc>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="call_stack.cpp" />
     <ClCompile Include="debugger.cpp" />
+    <ClCompile Include="disassembler.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="disassembler.h" />
     <QtMoc Include="debugger.h" />
+    <ClInclude Include="call_stack.h" />
     <ClInclude Include="debugger_global.h" />
   </ItemGroup>
   <ItemGroup>
@@ -126,6 +130,9 @@
     </ProjectReference>
     <ProjectReference Include="..\ram\ram.vcxproj">
       <Project>{5ef3e967-2dcb-4f2f-b6a0-78ebef746214}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\vm\vm.vcxproj">
+      <Project>{860c42e1-d3df-4114-8983-4fa699108517}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

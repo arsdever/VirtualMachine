@@ -1,5 +1,4 @@
-#include "../assets/assets.h"
+#include "../assets/ar_window.h"
+#include "../assets/gpr_window.h"
 #include "../assets/memory_changer.h"
-#include "../assets/disassembler.h"
 #include "../assets/code_editor.h"
-#include "../assets/call_stack.h"

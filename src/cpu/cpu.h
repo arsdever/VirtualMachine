@@ -1,12 +1,29 @@
-﻿#pragma once
+﻿//------------------------------------------------------------------------------------------------------------------
+// ╔════════════════════════════╗
+// ║ Register operand structure ║
+// ╚════════════════════════════╝
+// 
+//            ┌─────────┬──── general purpose register number
+//			  │   		│
+// binary 0 1 0 0 0 1 0 1     extands for "general purpose register / uint8 type / number 5"
+//		  │	│ │   │ │   │
+//		  │ │ │   │ └───┴──── address register number
+//		  │ │ └───┴────────── not used for address types
+//		  │ └──────────────── operand type  (1-uint8 / 0-uint32) unused for address types
+//        └────────────────── register type (1-ar / 0-gpr)
+//------------------------------------------------------------------------------------------------------------------
+
+#pragma once
 
 #include "cpu_global.h"
+
+#include <exception>
+
 #include <QObject>
 #include <QMap>
 #include <QPair>
-#include <QStack>
-#include <QVector>
-#include <exception>
+
+class CRAM;
 
 class CPU_EXPORT CCPU : public QObject
 {
@@ -33,16 +50,16 @@ public:
 		bool RUN;
 		qint32 FLAGS;
 		quint32& SF;
-		quint32& SP;
+		quint32& SP;/*
 		quint8 INT;
-		QVector<qint32> IVT;
+		QVector<qint32> IVT;*/
 
 		SState()
 			: PC(0)
 			, IR{ 0 }
 			, AR{ 0 }
 			, GR{ 0 }
-			, RUN(true)
+			, RUN(false)
 			, FLAGS((EFlags)0)
 			, SF(AR[0])
 			, SP(AR[1])
@@ -73,17 +90,25 @@ public:
 
 	} m_sState;
 
-public:
-	CCPU();
+public slots:
 	void Run();
 	void Step();
+
+public:
+	CCPU(CRAM* pRam);
+	CRAM* Ram() const { return m_pRam; }
+	SState GetState() const;
+	QString GetUUID() const;
+
+	void Restart();
+
+private:
 	void Fetch();
 	quint8 Decode();
 	void Execute();
-	SState GetState() const;
 	void HandleInterrupt();
-	//void UpdateRegisters(CRegisterSet const& newState);
 
+public:
 	typedef void (CCPU::*FunctionPointer)();
 
 	enum InstructionCode
@@ -175,25 +200,14 @@ public:
 
 	typedef QMap<int, QPair<quint8, CCPU::FunctionPointer>> InstructionMap;
 
+	// Instruction executers declaration
+
 	void NOP_exec();
 	void RET_exec();
 	void BRK_exec();
 	void HLT_exec();
 	void CALL_exec();
 	void INT_exec();
-
-	//------------------------------------------------------------------------------------------------------------------
-	// For instructions PUSH/POP operand structure is
-	//            ┌─────────┬──── general purpose register number
-	//			  │   		│
-	// binary 0 1 0 0 0 1 0 1     extands for "general purpose register / uint8 type / number 5"
-	//		  │	│ │   │ │   │
-	//		  │ │ │   │ └───┴──── address register number
-	//		  │ │ └───┴────────── not used for address types
-	//		  │ └──────────────── operand type  (1-uint8 / 0-uint32) unused for address types
-	//        └────────────────── register type (1-ar / 0-gpr)
-	//------------------------------------------------------------------------------------------------------------------
-
 	void PUSH_exec();
 	void POP_exec();
 	void PUSHF_exec();
@@ -243,10 +257,13 @@ public:
 
 private:
 	FunctionPointer m_fptrExecuter;
+	CRAM* m_pRam;
+	QString m_strUUID;
 
 public:
-	struct cpu_exception : std::exception {};
+	struct cpu_exception : public std::exception {};
 	struct breakpoint_exception : cpu_exception {};
 	struct ram_not_found_exception : cpu_exception {};
 	struct invalid_register_exception : cpu_exception {};
+	struct invalid_function_call : cpu_exception {};
 };

@@ -1,103 +1,111 @@
 #include "virtualmachine.h"
-#include <QVBoxLayout>
-#include <QHBoxLayout>
-#include <QLineEdit>
-#include <QPushButton>
-#include <assets>
-#include <ram>
-#include <QDockWidget>
-#include <QMessageBox>
 #include <cpu>
+#include <ram>
+
 #include <QFile>
-#include <QStatusBar>
-#include <QPlainTextEdit>
-#include <QMenuBar>
-#include <QFileDialog>
+#include <QMessageBox>
 
-VirtualMachine::VirtualMachine(QWidget *parent)
-	: QMainWindow(parent)
-	, m_cCPU()
-	, m_cDebugger()
-	, m_pEditor(new CCodeEditor())
+CVirtualMachine::CVirtualMachine(quint32 nRamSize, quint32 nCoreCount, QObject* pParent)
+	: QObject(pParent)
+	, m_pRAM(new CRAM(nRamSize))
 {
-	connect(&m_cDebugger, SIGNAL(Update()), this, SLOT(UpdateStatusBar()));
-	setStatusBar(new QStatusBar());
-
-	QDockWidget* pMemoryDock = new QDockWidget("Memory", this);
-	pMemoryDock->setWidget(m_cDebugger.GetMemoryWidget());
-	pMemoryDock->setFeatures(QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetMovable);
-	addDockWidget(Qt::BottomDockWidgetArea, pMemoryDock);
-
-	QDockWidget* pRegViewDock = new QDockWidget("Registers", this);
-	pRegViewDock->setWidget(m_cDebugger.GetRegisterAreaWidget());
-	pRegViewDock->setFeatures(QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetMovable);
-	addDockWidget(Qt::RightDockWidgetArea, pRegViewDock);
-
-	QDockWidget* pARegViewDock = new QDockWidget("Address registers", this);
-	pARegViewDock->setWidget(m_cDebugger.GetARegisterAreaWidget());
-	pARegViewDock->setFeatures(QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetMovable);
-	addDockWidget(Qt::RightDockWidgetArea, pARegViewDock);
-
-	QDockWidget* pCallStackDock = new QDockWidget("CallStack", this);
-	pCallStackDock->setWidget(m_cDebugger.GetCallStackWidget());
-	pCallStackDock->setFeatures(QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetMovable);
-	addDockWidget(Qt::RightDockWidgetArea, pCallStackDock);
-
-	/*QWidget* pCentralWidget = new QWidget();
-	pCentralWidget->setLayout(new QVBoxLayout());
-	pCentralWidget->layout()->addWidget(m_pEditor);
-	CEditorNumberArea* pNumberArea = new CEditorNumberArea();
-	pNumberArea->SetDrawerWidget((CCodeEditor*)m_pEditor);
-	pCentralWidget->layout()->addWidget(pNumberArea);*/
-	m_pEditor->setReadOnly(true);
-	setCentralWidget(m_pEditor);
-
-	InitMenuBar();
+	while (nCoreCount > 0)
+	{
+		DeployCPU();
+		--nCoreCount;
+	}
 }
 
-void VirtualMachine::UpdateStatusBar()
+CVirtualMachine::~CVirtualMachine()
 {
-	statusBar()->showMessage(m_cDebugger.GetCurrentInstruction());
 }
 
-void VirtualMachine::LoadProgram(QString const& path)
+void CVirtualMachine::LoadProgram(QString const& path)
 {
 	QFile file(path);
 	file.open(QIODevice::ReadOnly);
 	if (file.isOpen())
 	{
+		if (file.read(4) != "vmef")
+		{
+			file.close();
+			throw invalid_file();
+		}
+
+		file.seek(0);
 		QByteArray content = file.readAll();
 		int i = 0;
 		for (; i < content.size(); ++i)
-			CRAM::instance()->operator[]<quint8>(i) = content[i];
+			RAM()->operator[]<quint8>(i) = content[i];
 	}
 	file.close();
 
-	m_cCPU.m_sState.SF = CRAM::instance()->GetSize();
-	m_cCPU.m_sState.SP = CRAM::instance()->GetSize();
-	m_cCPU.m_sState.PC = CRAM::instance()->operator[]<quint32>(8);
-	m_pEditor->setPlainText(CDisassembler::Disassemble(path));
-	m_cDebugger.AttachToProcess(&m_cCPU);
-	QString debuggerPath = path;
-	debuggerPath.replace(QRegularExpression(".ef$"), QString(".dbg"));
-	m_cDebugger.LoadBreakpoints(debuggerPath);
+	for (CCPU* cpu : m_setCPU)
+		if (cpu != nullptr)
+			cpu->Restart();
+
+	emit NewProgramLoaded(path);
 }
 
-void VirtualMachine::InitMenuBar()
+void CVirtualMachine::DeployCPU()
 {
-	QMenuBar* pMenuBar = new QMenuBar();
-	QMenu* fileMenu = pMenuBar->addMenu("File");
-	fileMenu->addAction(QIcon(":/Resources/folder_16x16.png"), "Open", this, SLOT(OnOpen()), QKeySequence("CTRL+O"));
-	m_cDebugger.PopulateMenuBar(pMenuBar);
-	setMenuBar(pMenuBar);
+	CCPU* pCPU = new CCPU(m_pRAM);
+	pCPU->Restart();
+	m_setCPU.insert(pCPU);
 }
 
-void VirtualMachine::OnOpen()
+CCPU* CVirtualMachine::GetCPU() const
 {
-	QString openFile = QFileDialog::getOpenFileName(this, "Choose file...", "./", "Binary files (*.ef)");
+	return m_setCPU.toList().back();
+}
 
-	if (openFile == "")
-		return;
+CCPU* CVirtualMachine::GetCPUByID(QString const& id) const
+{
+	for (CCPU* cpu : m_setCPU)
+	{
+		if (cpu != nullptr && cpu->GetUUID() == id)
+			return cpu;
+	}
 
-	LoadProgram(openFile);
+	return nullptr;
+}
+
+QStringList CVirtualMachine::GetCPUIDList() const
+{
+	QStringList result;
+	for (CCPU* cpu : m_setCPU)
+		if (cpu != nullptr)
+			result.push_back(cpu->GetUUID());
+	return result;
+}
+
+CRAM* CVirtualMachine::RAM() const
+{
+	return m_pRAM;
+}
+
+void CVirtualMachine::SetRAM(CRAM* pRAM)
+{
+	m_pRAM = pRAM;
+}
+
+CDebugger* CVirtualMachine::Debugger() const
+{
+	return m_pDebugger;
+}
+
+void CVirtualMachine::SetDebugger(CDebugger* pDebugger)
+{
+	m_pDebugger = pDebugger;
+}
+
+void CVirtualMachine::Run()
+{
+	for (CCPU* pCPU : m_setCPU)
+	{
+		pCPU->Run();
+
+		if (!pCPU->m_sState.RUN)
+			QMessageBox::information(nullptr, pCPU->GetUUID(), "Program execution finished.");
+	}
 }

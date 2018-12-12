@@ -6,7 +6,7 @@
 class QPaintEvent;
 class CCodeEditor;
 
-class CEditorNumberArea : public QWidget
+class ASSETS_EXPORT CEditorNumberArea : public QWidget
 {
 public:
 	CEditorNumberArea(QWidget* pParent = nullptr);

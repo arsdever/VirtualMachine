@@ -30,10 +30,8 @@ public:
 private:
 	quint32 m_nSize;
 	quint8* m_pMemory;
-	static CRAM* pinstance;
 
 public:
-	static CRAM* instance();
-	struct ram_exception : std::exception {};
+	struct ram_exception : public std::exception {};
 	struct index_out_of_bounds_exception : ram_exception {};
 };
