@@ -111,9 +111,11 @@
     <ClCompile Include="call_stack.cpp" />
     <ClCompile Include="debugger.cpp" />
     <ClCompile Include="disassembler.cpp" />
+    <ClCompile Include="disassembler_decor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="disassembler.h" />
+    <ClInclude Include="disassembler_decor.h" />
     <QtMoc Include="debugger.h" />
     <ClInclude Include="call_stack.h" />
     <ClInclude Include="debugger_global.h" />

@@ -21,10 +21,11 @@ QSize CEditorAddressArea::sizeHint() const
 {
 	if (m_pEditor == 0)
 		return QSize(0, 0);
-	return m_pEditor->GetAddressAreaDecorator()->GetWidgetSizeHint();
+	QMap<void*, QSize> resultMap = CallFunctionAndReturn<IEditorAddressAreaImplementer>(IEditorAddressAreaImplementer::GetWidgetSizeHintFunctor());
+	return *resultMap.begin();
 }
 
 void CEditorAddressArea::paintEvent(QPaintEvent* pEvent)
 {
-	m_pEditor->GetAddressAreaDecorator()->DrawDecoration(pEvent, this);
+	CallFunction<IEditorAddressAreaImplementer>(IEditorAddressAreaImplementer::DrawDecorationFunctor(pEvent, this));
 }

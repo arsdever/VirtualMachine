@@ -10,6 +10,8 @@ CCodeEditor::CCodeEditor()
 	, m_pAddressArea(new CEditorAddressArea(this))
 	, m_pBPArea(new CEditorBPArea(this))
 {
+	appendHtml("<font style=\"color:#fff\">");
+	//setAutoFillBackground(true);
 	m_pNumberArea->SetDrawerWidget(this);
 	m_pAddressArea->SetDrawerWidget(this);
 	m_pBPArea->SetDrawerWidget(this);
@@ -93,15 +95,18 @@ void CCodeEditor::XEditorNumberAreaImplementer::DrawDecoration(QPaintEvent* pEve
 {
 	QPainter painter(pWidget);
 	painter.setRenderHints(QPainter::Antialiasing);
-	painter.fillRect(pEvent->rect(), QColor(164,164,164));
+	painter.fillRect(pEvent->rect(), QColor(16, 16, 16));
 	QTextBlock block = m_pThis->firstVisibleBlock();
+	painter.setPen(QColor(55, 120, 192));
+	QFont numberFont = m_pThis->font();
+	numberFont.setBold(true);
+	painter.setFont(numberFont);
 	int blockNumber = block.blockNumber();
 	int top = (int)m_pThis->blockBoundingGeometry(block).translated(m_pThis->contentOffset()).top();
 	int bottom = top + (int)m_pThis->blockBoundingRect(block).height();
 	while (block.isValid() && top <= pEvent->rect().bottom()) {
 		if (block.isVisible() && bottom >= pEvent->rect().top()) {
 			QString number = QString::number(blockNumber + 1);
-			painter.setPen(Qt::black);
 			painter.drawText(5, top, pWidget->width() - 10, m_pThis->fontMetrics().height(),
 				Qt::AlignRight, number);
 		}
@@ -132,7 +137,7 @@ void CCodeEditor::updateAreas(QRect const& r, int d)
 		updateAreaWidth(0);
 }
 
-QSize CCodeEditor::CEditorAddressAreaImplementer::GetWidgetSizeHint() const
+QSize CCodeEditor::XEditorAddressAreaImplementer::GetWidgetSizeHint() const
 {
 	int digits = 10;
 
@@ -141,11 +146,11 @@ QSize CCodeEditor::CEditorAddressAreaImplementer::GetWidgetSizeHint() const
 	return QSize(space + 10, 0);
 }
 
-void CCodeEditor::CEditorAddressAreaImplementer::DrawDecoration(QPaintEvent* pEvent, QWidget* pWidget) const
+void CCodeEditor::XEditorAddressAreaImplementer::DrawDecoration(QPaintEvent* pEvent, QWidget* pWidget) const
 {
 	QPainter painter(pWidget);
 	painter.setRenderHints(QPainter::Antialiasing);
-	painter.fillRect(pEvent->rect(), QColor(210, 210, 210));
+	painter.fillRect(pEvent->rect(), QColor(24, 24, 24));
 
 	typedef bool(*Validator)(quint32, quint32*);
 	Validator validate = (Validator)QLibrary::resolve(QString("debugger")
@@ -158,6 +163,7 @@ void CCodeEditor::CEditorAddressAreaImplementer::DrawDecoration(QPaintEvent* pEv
 		return;
 
 	QTextBlock block = m_pThis->firstVisibleBlock();
+	painter.setPen(QColor(96,96,96));
 	int blockNumber = block.blockNumber();
 	int top = (int)m_pThis->blockBoundingGeometry(block).translated(m_pThis->contentOffset()).top();
 	int bottom = top + (int)m_pThis->blockBoundingRect(block).height();
@@ -168,7 +174,6 @@ void CCodeEditor::CEditorAddressAreaImplementer::DrawDecoration(QPaintEvent* pEv
 
 			if (validate(lineNumber, &address))
 			{
-				painter.setPen(Qt::black);
 				painter.drawText(5, top, pWidget->width() - 10, m_pThis->fontMetrics().height(),
 					Qt::AlignRight, QString("0x%1").arg(address, 8, 16, QChar('0')));
 
@@ -182,16 +187,16 @@ void CCodeEditor::CEditorAddressAreaImplementer::DrawDecoration(QPaintEvent* pEv
 	}
 }
 
-QSize CCodeEditor::CEditorBPAreaImplementer::GetWidgetSizeHint() const
+QSize CCodeEditor::XEditorBPAreaImplementer::GetWidgetSizeHint() const
 {
 	return QSize(m_pThis->fontMetrics().height() + 4, 0);
 }
 
-void CCodeEditor::CEditorBPAreaImplementer::DrawDecoration(QPaintEvent* pEvent, QWidget* pWidget) const
+void CCodeEditor::XEditorBPAreaImplementer::DrawDecoration(QPaintEvent* pEvent, QWidget* pWidget) const
 {
 	QPainter painter(pWidget);
 	painter.setRenderHints(QPainter::Antialiasing);
-	painter.fillRect(pEvent->rect(), QColor(210, 210, 210));
+	painter.fillRect(pEvent->rect(), QColor(28,28,28));
 
 	typedef bool(*Validator)(quint32, quint32*);
 	Validator validate = (Validator)QLibrary::resolve(QString("debugger")
@@ -243,7 +248,7 @@ void CCodeEditor::CEditorBPAreaImplementer::DrawDecoration(QPaintEvent* pEvent, 
 	}
 }
 
-void CCodeEditor::CEditorBPAreaImplementer::PressedAt(QMouseEvent* pEvent) const
+void CCodeEditor::XEditorBPAreaImplementer::PressedAt(QMouseEvent* pEvent) const
 {
 	typedef bool(*Validator)(quint32, quint32*);
 	Validator validate = (Validator)QLibrary::resolve(QString("debugger")
@@ -266,8 +271,13 @@ void CCodeEditor::CEditorBPAreaImplementer::PressedAt(QMouseEvent* pEvent) const
 
 			if (value >= top && value <= bottom && validate(blockNumber, &address))
 			{
-				CallFunction<IDebugger>(IDebugger::ToggleBreakpointFunctor(address));
-				m_pThis->update();
+				try
+				{
+					CallFunction<IDebugger>(IDebugger::ToggleBreakpointFunctor(address));
+					m_pThis->update();
+				}
+				catch (IDebugger::debugger_exception)
+				{}
 				return;
 			}
 

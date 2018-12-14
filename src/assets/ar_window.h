@@ -17,7 +17,7 @@ class ASSETS_EXPORT CARegisterWindow : public QWidget
 	IMPLEMENT_BEGIN(CARegisterWindow, VMInformation)
 		virtual void UpdateGRegistersInformation(CCPU*) override {}
 		virtual void UpdateARegistersInformation(CCPU*) override;
-		virtual void UpdateCallStack(quint32, CRAM*) override {}
+		virtual void UpdateCallStack(QStringList const&) override {}
 		virtual void UpdateMemoryInformation(CRAM*) override {}
 	IMPLEMENT_END(VMInformation)
 

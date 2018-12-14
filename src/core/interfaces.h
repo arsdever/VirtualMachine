@@ -3,9 +3,11 @@
 #include "core_global.h"
 #include "macros.h"
 #include <QString>
+#include <exception>
 
 class CCPU;
 class CRAM;
+class QStringList;
 
 class CORE_EXPORT IUnknown
 {
@@ -48,13 +50,13 @@ public:
 	GENERATE_FUNCTOR_1(Core, IVMInformation, UpdateGRegistersInformation, CCPU*)
 	GENERATE_FUNCTOR_1(Core, IVMInformation, UpdateARegistersInformation, CCPU*)
 	GENERATE_FUNCTOR_1(Core, IVMInformation, UpdateMemoryInformation, CRAM*)
-	GENERATE_FUNCTOR_2(Core, IVMInformation, UpdateCallStack, quint32, CRAM*)
+	GENERATE_FUNCTOR_1(Core, IVMInformation, UpdateCallStack, QStringList const&)
 
 protected:
 	virtual void UpdateGRegistersInformation(CCPU*) = 0;
 	virtual void UpdateARegistersInformation(CCPU*) = 0;
 	virtual void UpdateMemoryInformation(CRAM*) = 0;
-	virtual void UpdateCallStack(quint32, CRAM*) = 0;
+	virtual void UpdateCallStack(QStringList const&) = 0;
 };
 
 class CORE_EXPORT IDebugger : public IUnknown
@@ -75,4 +77,8 @@ protected:
 	virtual void ToggleBreakpoint(quint32) = 0;
 	virtual void SetRunningAddress(quint32) = 0;
 	virtual void ClearBreakpoints() = 0;
+
+public:
+	struct debugger_exception : public std::exception {};
+	struct process_not_attached : debugger_exception {};
 };

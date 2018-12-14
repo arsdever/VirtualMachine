@@ -1,7 +1,30 @@
 #include "disassembler.h"
 #include <QFile>
+#include <QRegularExpression>
 
-QString GetOperationName(quint8 operation)
+IDisassembler::~IDisassembler() {}
+
+CDisassembler::CDisassembler(QString const& path)
+	: IDisassembler()
+	, m_strPath(path)
+	, m_slResult()
+	, m_bSkipNop(true)
+{}
+
+void CDisassembler::Process()
+{
+	QFile input(GetPath());
+	input.open(QIODevice::ReadOnly);
+
+	if (!input.isOpen())
+		return;
+	
+	m_baData = input.readAll();
+	ConstructRelocationTable(m_baData);
+	Disassemble(m_baData);
+}
+
+static QString GetOperationName(quint8 operation)
 {
 	switch (operation)
 	{
@@ -19,9 +42,9 @@ QString GetOperationName(quint8 operation)
 	case CCPU::InstructionCode::PUSHF: return "push f";
 	case CCPU::InstructionCode::POPF: return "pop f";
 	case CCPU::InstructionCode::CALL: return "call";
-	case CCPU::InstructionCode::ASG: return "assign";
+	case CCPU::InstructionCode::ASG: return "asg";
 	case CCPU::InstructionCode::LOD: return "load";
-	case CCPU::InstructionCode::STR: return "store";
+	case CCPU::InstructionCode::STR: return "str";
 	case CCPU::InstructionCode::MOV: return "mov";
 	case CCPU::InstructionCode::CMP: return "cmp";
 	case CCPU::InstructionCode::JMP: return "jmp";
@@ -44,7 +67,7 @@ QString GetOperationName(quint8 operation)
 	return "???";
 }
 
-QString Disassemble(quint8 instruction[8])
+QString CDisassembler::DisassembleInstruction(const quint8* instruction)
 {
 	QString result = GetOperationName(instruction[0]);
 	switch (instruction[0])
@@ -104,20 +127,15 @@ QString Disassemble(quint8 instruction[8])
 		case CCPU::NOT_PARITY: result = "jnp"; break;
 		}
 		quint32 address = *(quint32*)(instruction + 2);
-		if (s_mapRelocaionTable.contains(address))
-			result += QString(" %1").arg(s_mapRelocaionTable[address]);
-		else
-			result += QString(" %1h").arg(address, 8, 16, QChar('0'));
+
+		result += QString(" %1h").arg(address, 8, 16, QChar('0'));
 		break;
 	}
 	case CCPU::InstructionCode::CALL:
 	case CCPU::InstructionCode::JMP:
 	{
 		quint32 address = *(quint32*)(instruction + 1);
-		if(s_mapRelocaionTable.contains(address))
-			result += QString(" %1").arg(s_mapRelocaionTable[address]);
-		else
-			result += QString(" %1h").arg(address, 8, 16, QChar('0'));
+		result += QString(" %1h").arg(address, 8, 16, QChar('0'));
 		break;
 	} 
 	case CCPU::InstructionCode::ASG:
@@ -128,12 +146,12 @@ QString Disassemble(quint8 instruction[8])
 	case CCPU::InstructionCode::LOD:
 		result += QString(" %1, a%2")
 			.arg(QString("%1%2").arg(instruction[1] & 0x80 ? 'a' : 'r').arg(instruction[1] & 0x80 ? instruction[1] & 0x07 : instruction[1] & 0x3F))
-			.arg(instruction[2] & 0x07, 8, 16, QChar('0'));
+			.arg(instruction[2] & 0x07);
 		break;
 	case CCPU::InstructionCode::STR:
 		result += QString(" %1, a%2")
 			.arg(QString("%1%2").arg(instruction[1] & 0x80 ? 'a' : 'r').arg(instruction[1] & 0x80 ? instruction[1] & 0x07 : instruction[1] & 0x3F))
-			.arg(instruction[2] & 0x07, 8, 16, QChar('0'));
+			.arg(instruction[2] & 0x07);
 		break;
 	case CCPU::InstructionCode::MOV:
 	case CCPU::InstructionCode::SWP:
@@ -152,30 +170,37 @@ QString Disassemble(quint8 instruction[8])
 	return result;
 }
 
-void SetRelocationTable(QMap<quint32, QString> const& map)
-{
-	s_mapRelocaionTable = map;
-}
+//void CDisassembler::Relocate(QString& instruction)
+//{
+//	QString ins = instruction.mid(0, instruction.indexOf(' '));
+//	if (ins == "asg");
+//}
 
-extern "C" DEBUGGER_EXPORT void Disassemble(QString const& file, QString& result)
-{
-	QFile input(file);
-	input.open(QIODevice::ReadOnly);
-	if (!input.isOpen())
-	{
-		result = "";
-		return;
-	}
+//void CDisassembler::Colorize(QString& instructionLine)
+//{
+//	QString instruction = instructionLine.mid(0, instructionLine.indexOf(' '));
+//	instructionLine.insert(instruction.size(), "</font>");
+//	instructionLine.insert(0, "<font style=\"font-weight:bold;color:#6f6\">");
+//	for (QString label : m_mapRelocaionTable)
+//	{
+//		int index = instructionLine.indexOf(label);
+//		if(index > -1)
+//			instructionLine.insert(index + label.size(), "</font>");
+//			instructionLine.insert(index, "<font style=\"font-weight:bold;color:#f66\">");
+//	}
+//}
 
-	QByteArray bytes = input.readAll();
+void CDisassembler::ConstructRelocationTable(QByteArray const& bytes)
+{
 	quint8* data = (quint8*)bytes.data();
-	s_nSymbolTableAddress = (quint32)data[0];
-	s_nDataSectionAddress = (quint32)data[4];
-	s_nCodeSectionAddress = (quint32)data[8];
-	s_nRelocationTableAddress = (quint32)data[12];
+	m_nSymbolTableAddress = (quint32)data[0];
+	m_nDataSectionAddress = (quint32)data[4];
+	m_nCodeSectionAddress = (quint32)data[8];
+	m_nRelocationTableAddress = (quint32)data[12];
 
-	QMap<quint32, QString> map;
-	quint32 pos = s_nRelocationTableAddress;
+	VariableTable dmap;
+	FunctionTable fmap;
+	quint32 pos = m_nRelocationTableAddress;
 
 	while (1)
 	{
@@ -184,46 +209,37 @@ extern "C" DEBUGGER_EXPORT void Disassemble(QString const& file, QString& result
 		if (name == "")
 			break;
 
-		map[(quint32)data[pos + name.size() + 1]] = name;
-		pos += name.size() + 5;
+		if (name[0] == ':')
+		{
+			dmap[(quint32)data[pos + name.size() + 2]] = QPair<QString, quint32>(name.mid(1), (quint8)data[pos + name.size() + 1]);
+			pos += name.size() + 6;
+		}
+		else
+		{
+			fmap[(quint32)data[pos + name.size() + 1]] = name;
+			pos += name.size() + 5;
+		}
 	}
 
-	SetRelocationTable(map);
-	result = ".code\n";
+	SetFRelocationTable(fmap);
+	SetVRelocationTable(dmap);
+}
+
+void CDisassembler::Disassemble(QByteArray const& code)
+{
+	m_slResult.append(".code");
+	const char* data = code.data();
 
 	int i = 1;
-	for (quint32 pos = s_nCodeSectionAddress; pos < s_nRelocationTableAddress;)
+	for (quint32 pos = m_nCodeSectionAddress; pos < m_nRelocationTableAddress;)
 	{
-		if (s_mapRelocaionTable.contains(pos))
-		{
-			result += s_mapRelocaionTable[pos] + ":\n";
-			++i;
-		}
-		QString instruction = Disassemble(&data[pos]);
+		QString instruction = DisassembleInstruction((const quint8*)&data[pos]);
 
-		if (instruction != "nop" || !s_bSkipNop)
+		if (instruction != "nop" || !m_bSkipNop)
 		{
-			result += "    " + instruction + '\n';
-
-			s_mapLineAddresses[i++] = pos;
+			m_slResult.append("    " + instruction);
+			m_mapLineAddresses[i++] = pos;
 		}
 		pos += CCPU::s_mapInstructions[data[pos]].first;
 	}
-}
-
-extern "C" DEBUGGER_EXPORT bool SymbolExist(quint32 address)
-{
-	return s_mapRelocaionTable.contains(address);
-}
-
-extern "C" DEBUGGER_EXPORT bool LineToAddress(quint32 line, quint32* address)
-{
-	if (!s_mapLineAddresses.contains(line))
-		return false;
-
-	if (address == nullptr)
-		return false;
-
-	*address = s_mapLineAddresses[line];
-	return true;
 }

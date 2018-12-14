@@ -1,7 +1,6 @@
 #include "virtualmachinewindow.h"
 #include "virtualmachine.h"
 
-#include <assets>
 //#include <debugger>
 #include <ram>
 
@@ -27,7 +26,6 @@
 CVirtualMachineWindow::CVirtualMachineWindow(QWidget *parent)
 	: QMainWindow(parent)
 	, m_pVM(new CVirtualMachine(0xffff, 1, this))
-	, m_pEditor(new CCodeEditor())
 {
 	setAcceptDrops(true);
 	setStatusBar(new QStatusBar());
@@ -40,9 +38,8 @@ CVirtualMachineWindow::CVirtualMachineWindow(QWidget *parent)
 	CEditorNumberArea* pNumberArea = new CEditorNumberArea();
 	pNumberArea->SetDrawerWidget((CCodeEditor*)m_pEditor);
 	pCentralWidget->layout()->addWidget(pNumberArea);*/
-	m_pEditor->setAcceptDrops(false);
-	setCentralWidget(m_pEditor);
-
+	QDockWidget* pConsoleDock = new QDockWidget("Console");
+	addDockWidget(Qt::TopDockWidgetArea, pConsoleDock);
 }
 
 CVirtualMachine* CVirtualMachineWindow::GetVM() const
@@ -87,14 +84,13 @@ void CVirtualMachineWindow::LoadProgram(QString const& path)
 #ifdef _DEBUG
 		+ "d"
 #endif
-	, "Disassemble");
+	, "DisassembleColorized");
 
 	if (disassemble == nullptr)
 		return;
 
 	QString disassembled;
 	disassemble(path, disassembled);
-	m_pEditor->setPlainText(disassembled);
 	//m_pDebugger->AttachToProcess(CVirtualMachine::GlobalInstance()->GetCPU());
 	//QString debuggerPath = path;
 	//debuggerPath.replace(QRegularExpression(".ef$"), QString(".dbg"));

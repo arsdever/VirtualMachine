@@ -35,6 +35,9 @@
     <ClCompile Include="disassembler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="disassembler_decor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="debugger_global.h">
@@ -44,6 +47,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="disassembler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="disassembler_decor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -125,9 +125,6 @@
     <ClInclude Include="vm_global.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\assets\assets.vcxproj">
-      <Project>{13421d7c-0894-41b8-899f-7480195bd43c}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\core\core.vcxproj">
       <Project>{3ef31140-6d38-4155-8ea4-a2b11ebe9124}</Project>
     </ProjectReference>

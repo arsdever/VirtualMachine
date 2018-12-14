@@ -1,4 +1,5 @@
 ﻿#include "debugger.h"
+#include "disassembler_decor.h"
 #include <ram>
 #include <cpu>
 #include <vm>
@@ -23,6 +24,8 @@ CDebugger::CDebugger(CVirtualMachineWindow* pParent)
 	, m_bRunning(true)
 	, m_pMemory(new QTextEdit())
 	, m_strCurrentInstruction("")
+	, m_bAttached(false)
+	, disassembler(nullptr)
 {
 	m_lstActions.push_back(new QAction("Attach to process"));
 	connect(m_lstActions.back(), SIGNAL(triggered()), this, SLOT(AttachToProcess()));
@@ -50,6 +53,7 @@ CDebugger::CDebugger(CVirtualMachineWindow* pParent)
 	connect(m_lstActions.back(), SIGNAL(triggered()), this, SLOT(ShowMemory()));
 	m_lstActions.back()->setDisabled(true);
 	connect(pParent->GetVM(), SIGNAL(NewProgramLoaded(QString const&)), this, SLOT(OnProgramLoaded(QString const&)));
+	connect(pParent->GetVM(), SIGNAL(ExecutionFinished()), this, SLOT(UpdateInformation()));
 }
 
 void CDebugger::UpdateInformation()
@@ -64,7 +68,21 @@ void CDebugger::UpdateInformation()
 	CallFunction<IVMInformation>(IVMInformation::UpdateGRegistersInformationFunctor(m_pProcess));
 	CallFunction<IVMInformation>(IVMInformation::UpdateARegistersInformationFunctor(m_pProcess));
 	CallFunction<IVMInformation>(IVMInformation::UpdateMemoryInformationFunctor(m_pProcess->Ram()));
-	CallFunction<IVMInformation>(IVMInformation::UpdateCallStackFunctor(m_pProcess->GetState().SF, m_pProcess->Ram()));
+
+	quint32 sf = m_pProcess->m_sState.SF;
+	CRAM* pRAM = m_pProcess->Ram();
+	QStringList result;
+	while (sf < pRAM->GetSize())
+	{
+		quint32 ip = pRAM->operator[]<quint32>(sf + 4) - CCPU::s_mapInstructions[CCPU::CALL].first;
+		quint32 address = pRAM->operator[]<quint32>(ip + 1);
+
+		result.push_back(QString("0x%1").arg(address, 8, 16, QChar('0')));
+
+		sf = pRAM->operator[]<quint32>(sf);
+	}
+
+	CallFunction<IVMInformation>(IVMInformation::UpdateCallStackFunctor(result));
 	//m_strCurrentInstruction = disassemble(&m_pProcess->Ram()->operator[]<quint8>(m_pProcess->GetState().PC));
 
 	// to be removed
@@ -204,6 +222,9 @@ void CDebugger::OnProgramLoaded(QString const& strNewPath)
 {
 	QString debuggerPath = strNewPath;
 	debuggerPath.replace(QRegExp(".ef$"), QString(".dbg"));
+	delete disassembler;
+	disassembler = new CColorizer(new CSymbolizer(new CDisassembler(strNewPath)));
+	disassembler->Process();
 	CVirtualMachine* pVM = dynamic_cast<CVirtualMachine*>(sender());
 	if (pVM == nullptr)
 		return;
@@ -211,19 +232,23 @@ void CDebugger::OnProgramLoaded(QString const& strNewPath)
 	if (m_pProcess == nullptr || !pVM->GetCPUIDList().contains(m_pProcess->GetUUID()))
 		return;
 
+	m_pCodeEditor->clear();
+	m_pCodeEditor->appendHtml("<pre>" + ((const CSymbolizer*)disassembler)->GetResult().join('\n') + "</pre>");
 	LoadBreakpoints(debuggerPath);
 	UpdateInformation();
 }
 
 void CDebugger::SetBreakpoint(quint32 address)
 {
-	if (m_pProcess == nullptr)
-		throw process_not_attached();
-
 	CRAM * pRam = m_pProcess->Ram();
 	m_mapBreakpoints[address] = m_pProcess->Ram()->operator[]<quint8>(address);
 	pRam->operator[]<quint8>(address) = CCPU::InstructionCode::BRK;
 	UpdateMemory();
+}
+
+void CDebugger::SetCodeEditor(CCodeEditor* editor)
+{
+	m_pCodeEditor = editor;
 }
 
 void CDebugger::SetMemory()
@@ -289,6 +314,7 @@ void CDebugger::AttachToProcess()
 		action->setEnabled(true);
 
 	UpdateInformation();
+	m_bAttached = true;
 }
 
 void CDebugger::Detach()
@@ -323,6 +349,11 @@ void CDebugger::XDebugger::ClearBreakpoints()
 
 void CDebugger::XDebugger::ToggleBreakpoint(quint32 address)
 {
+	if (m_pThis->m_bAttached == false)
+	{
+		CallFunction<IDebugger>(IDebugger::UnsetBreakpointFunctor(address));
+		throw IDebugger::process_not_attached();
+	}
 	if (m_pThis->m_mapBreakpoints.contains(address))
 		UnsetBreakpoint(address);
 	else
@@ -364,6 +395,10 @@ extern "C" DEBUGGER_EXPORT bool LoadPlugin(QMainWindow* pMainWindow)
 	pCallStackDock->setWidget(pCallStack);
 	pCallStackDock->setFeatures(QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetMovable);
 	pMainWindow->addDockWidget(Qt::RightDockWidgetArea, pCallStackDock);
+
+	CCodeEditor* pEditor = new CCodeEditor();
+	pDebugger->SetCodeEditor(pEditor);
+	pMainWindow->setCentralWidget(pEditor);
 
 	QMenuBar* pMenuBar = pMainWindow->menuBar();
 	if (pMenuBar == nullptr)

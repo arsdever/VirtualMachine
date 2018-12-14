@@ -108,4 +108,6 @@ void CVirtualMachine::Run()
 		if (!pCPU->m_sState.RUN)
 			QMessageBox::information(nullptr, pCPU->GetUUID(), "Program execution finished.");
 	}
+
+	emit ExecutionFinished();
 }

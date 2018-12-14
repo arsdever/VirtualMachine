@@ -8,6 +8,7 @@
 #include "editor_bp_area.h"
 
 class QResizeEvent;
+class QPaintEvent;
 class QDragEnterEvent;
 class QDropEvent;
 
@@ -29,42 +30,23 @@ class ASSETS_EXPORT CCodeEditor : public QPlainTextEdit
 		virtual QSize GetWidgetSizeHint() const override;
 	IMPLEMENT_END(EditorNumberAreaImplementer)
 
-private:
-	class CEditorAddressAreaImplementer
-	{
-		CEditorAddressAreaImplementer()
-		{
-			m_pThis = (CCodeEditor*)((unsigned long long)this - (unsigned long long)(&((CCodeEditor*)0)->m_xEditorAddressAreaImplementer));
-		}
-		friend class CEditorAddressArea;
-		friend class CCodeEditor;
+	IMPLEMENT_BEGIN(CCodeEditor, EditorAddressAreaImplementer)
+		virtual void DrawDecoration(QPaintEvent* pEvent, QWidget* pWidget) const override;
+		virtual QSize GetWidgetSizeHint() const override;
+	IMPLEMENT_END(EditorAddressAreaImplementer)
 
-		void DrawDecoration(QPaintEvent* pEvent, QWidget* pWidget) const;
-		QSize GetWidgetSizeHint() const;
-		CCodeEditor* m_pThis;
-	} m_xEditorAddressAreaImplementer;
-
-	class CEditorBPAreaImplementer
-	{
-		CEditorBPAreaImplementer()
-		{
-			m_pThis = (CCodeEditor*)((unsigned long long)this - (unsigned long long)(&((CCodeEditor*)0)->m_xEditorBPAreaImplementer));
-		}
-		friend class CEditorBPArea;
-		friend class CCodeEditor;
-
-		void DrawDecoration(QPaintEvent* pEvent, QWidget* pWidget) const;
-		QSize GetWidgetSizeHint() const;
-		void PressedAt(QMouseEvent* pEvent) const;
-		CCodeEditor* m_pThis;
-	} m_xEditorBPAreaImplementer;
+	IMPLEMENT_BEGIN(CCodeEditor, EditorBPAreaImplementer)
+		virtual void DrawDecoration(QPaintEvent* pEvent, QWidget* pWidget) const override;
+		virtual QSize GetWidgetSizeHint() const override;
+		virtual void PressedAt(QMouseEvent*) const override;
+	IMPLEMENT_END(EditorBPAreaImplementer)
 
 public:
 	CCodeEditor();
 	~CCodeEditor();
 	const IEditorNumberAreaImplementer* GetNumberAreaDecorator() const { return &m_xEditorNumberAreaImplementer; }
-	const CEditorAddressAreaImplementer* GetAddressAreaDecorator() const { return &m_xEditorAddressAreaImplementer; }
-	const CEditorBPAreaImplementer* GetBPAreaDecorator() const { return &m_xEditorBPAreaImplementer; }
+	const IEditorAddressAreaImplementer* GetAddressAreaDecorator() const { return &m_xEditorAddressAreaImplementer; }
+	const IEditorBPAreaImplementer* GetBPAreaDecorator() const { return &m_xEditorBPAreaImplementer; }
 
 protected:
 	void keyPressEvent(QKeyEvent* event) override;

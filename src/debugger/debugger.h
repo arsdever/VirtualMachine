@@ -9,6 +9,8 @@ class QPushButton;
 class CCPU;
 class QTextEdit;
 class QMenuBar;
+class CCodeEditor;
+class IDisassembler;
 class QAction;
 class CVirtualMachineWindow;
 
@@ -52,6 +54,7 @@ public slots:
 
 	void SetBreakpoint(quint32 address);
 	void SetBreakpoint();
+	void SetCodeEditor(CCodeEditor* editor);
 	void SetMemory();
 	void AttachToProcess();
 	void SetRegisterValue(quint8, quint32);
@@ -64,10 +67,9 @@ private:
 	QTextEdit* m_pMemory;
 	QString m_strCurrentInstruction;
 	bool m_bRunning;
+	bool m_bAttached;
+	CCodeEditor* m_pCodeEditor;
+	IDisassembler* disassembler;
 
 	QList<QAction*> m_lstActions;
-
-public:
-	struct debugger_exception : public std::exception {};
-	struct process_not_attached : debugger_exception {};
 };

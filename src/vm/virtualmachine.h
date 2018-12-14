@@ -34,6 +34,7 @@ public:
 
 signals:
 	void NewProgramLoaded(QString const&);
+	void ExecutionFinished();
 
 public slots:
 	void Run();

@@ -31,5 +31,4 @@ protected slots:
 
 private:
 	CVirtualMachine* m_pVM;
-	QPlainTextEdit* m_pEditor;
 };
