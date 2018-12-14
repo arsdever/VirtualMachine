@@ -26,41 +26,24 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="virtualmachinewindow.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="virtualmachine.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="cpu_list_dialog.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="console_window.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="vm_global.h">
+    <ClInclude Include="devices_global.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="console_device.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <QtMoc Include="virtualmachinewindow.h">
-      <Filter>Header Files</Filter>
-    </QtMoc>
-    <QtMoc Include="cpu_list_dialog.h">
-      <Filter>Header Files</Filter>
-    </QtMoc>
-    <QtMoc Include="virtualmachine.h">
-      <Filter>Header Files</Filter>
-    </QtMoc>
-    <QtMoc Include="console_window.h">
-      <Filter>Header Files</Filter>
-    </QtMoc>
+    <ClCompile Include="device_interface.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="console_device.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <QtRcc Include="Resource.qrc">
-      <Filter>Resource Files</Filter>
-    </QtRcc>
+    <QtMoc Include="device_interface.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
 </Project>

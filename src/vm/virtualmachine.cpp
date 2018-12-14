@@ -1,6 +1,7 @@
 #include "virtualmachine.h"
 #include <cpu>
 #include <ram>
+#include <devices>
 
 #include <QFile>
 #include <QMessageBox>
@@ -8,6 +9,7 @@
 CVirtualMachine::CVirtualMachine(quint32 nRamSize, quint32 nCoreCount, QObject* pParent)
 	: QObject(pParent)
 	, m_pRAM(new CRAM(nRamSize))
+	, m_arrDevices(0xffff)
 {
 	while (nCoreCount > 0)
 	{
@@ -99,11 +101,31 @@ void CVirtualMachine::SetDebugger(CDebugger* pDebugger)
 	m_pDebugger = pDebugger;
 }
 
+void CVirtualMachine::SetDevice(quint32 port, IIODevice * pDevice)
+{
+	if (port > m_arrDevices.size())
+		return;
+
+	m_arrDevices[port] = pDevice;
+}
+
 void CVirtualMachine::Run()
 {
 	for (CCPU* pCPU : m_setCPU)
 	{
-		pCPU->Run();
+		while (pCPU->GetState().RUN)
+		{
+			pCPU->Run();
+			if (pCPU->m_sState.IN_OUT == CCPU::SState::EInOutMode::Output)
+			{
+				quint32 port = pCPU->m_sState.PORTS[0xffff];
+				quint32 mode = pCPU->m_sState.IN_OUT;
+				quint32 data = (quint32)pCPU->m_sState.PORTS[port];
+				m_arrDevices.at(port)->Process(mode, data);
+				pCPU->m_sState.IN_OUT = CCPU::SState::EInOutMode::None;
+				pCPU->m_sState.PORTS[0xffff] = 0xff;
+			}
+		}
 
 		if (!pCPU->m_sState.RUN)
 			QMessageBox::information(nullptr, pCPU->GetUUID(), "Program execution finished.");

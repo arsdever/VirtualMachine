@@ -25,11 +25,8 @@
 
 class CRAM;
 
-class CPU_EXPORT CCPU : public QObject
+class CPU_EXPORT CCPU
 {
-
-	Q_OBJECT
-
 public:
 	struct SState
 	{
@@ -43,10 +40,19 @@ public:
 			IFlag = 32
 		};
 
+		enum EInOutMode
+		{
+			None,
+			Input,
+			Output
+		};
+
 		quint32 PC;
 		quint8 IR[8];
 		quint32 AR[8];
 		quint8 GR[64];
+		quint8 PORTS[0x10000];
+		quint8 IN_OUT;
 		bool RUN;
 		qint32 FLAGS;
 		quint32& SF;
@@ -59,11 +65,15 @@ public:
 			, IR{ 0 }
 			, AR{ 0 }
 			, GR{ 0 }
+			, PORTS{ 0 }
 			, RUN(false)
+			, IN_OUT(EInOutMode::None)
 			, FLAGS((EFlags)0)
 			, SF(AR[0])
 			, SP(AR[1])
-		{}
+		{
+			PORTS[0xffff] = 0xff;
+		}
 
 		SState(SState const& c)
 			: SF(AR[0])
@@ -90,15 +100,14 @@ public:
 
 	} m_sState;
 
-public slots:
-	void Run();
-	void Step();
 
 public:
 	CCPU(CRAM* pRam);
 	CRAM* Ram() const { return m_pRam; }
 	SState GetState() const;
 	QString GetUUID() const;
+	void Run();
+	void Step();
 
 	void Restart();
 
@@ -147,6 +156,8 @@ public:
 		SUBS,
 		MULS,
 		DIVS,
+		IN,
+		OUT,
 
 		CONDOTIONAL = 0x80
 	};
@@ -221,6 +232,8 @@ public:
 	void JMPC_exec();
 	void INC_exec();
 	void DEC_exec();
+	void IN_exec();
+	void OUT_exec();
 	template <typename INT_TYPE>
 	void NAND_exec();
 	template <typename INT_TYPE>

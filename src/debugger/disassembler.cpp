@@ -39,6 +39,8 @@ QString GetOperationName(quint8 operation)
 	case CCPU::InstructionCode::SUBS: return "adds";
 	case CCPU::InstructionCode::MULS: return "muls";
 	case CCPU::InstructionCode::DIVS: return "divs";
+	case CCPU::InstructionCode::IN: return "in";
+	case CCPU::InstructionCode::OUT: return "out";
 	}
 
 	return "???";
@@ -146,6 +148,12 @@ QString Disassemble(quint8 instruction[8])
 	case CCPU::InstructionCode::DEC:
 		result += QString(" %1")
 			.arg(QString("%1%2").arg(instruction[1] & 0x80 ? 'a' : 'r').arg(instruction[1] & 0x80 ? instruction[1] & 0x07 : instruction[1] & 0x3F));
+		break;
+	case CCPU::InstructionCode::IN:
+	case CCPU::InstructionCode::OUT:
+		result += QString(" r%1, %2h")
+			.arg(instruction[1] & 0x3F)
+			.arg(instruction[2], 4, 16, QChar('0'));
 		break;
 	}
 

@@ -4,6 +4,8 @@
 #include <assets>
 //#include <debugger>
 #include <ram>
+#include "console_window.h"
+#include <devices>
 
 #include <QLibrary>
 
@@ -18,6 +20,7 @@
 #include <QPlainTextEdit>
 #include <QMenuBar>
 #include <QFileDialog>
+#include <QRegularExpression>
 
 #include <QDragEnterEvent>
 #include <QDropEvent>
@@ -34,6 +37,14 @@ CVirtualMachineWindow::CVirtualMachineWindow(QWidget *parent)
 	InitMenuBar();
 
 	LoadPlugin("debugger");
+	CConsoleDevice* pConsoleDevice = new CConsoleDevice();
+	CConsoleWindow* pConsoleWindow = new CConsoleWindow();
+	pConsoleWindow->SetDevice(pConsoleDevice);
+	m_pVM->SetDevice(0, pConsoleDevice);
+	QDockWidget* pConsoleDock = new QDockWidget("Console", this);
+	pConsoleDock->setWidget(pConsoleWindow);
+	pConsoleDock->setFeatures(QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetMovable);
+	addDockWidget(Qt::RightDockWidgetArea, pConsoleDock);
 	/*QWidget* pCentralWidget = new QWidget();
 	pCentralWidget->setLayout(new QVBoxLayout());
 	pCentralWidget->layout()->addWidget(m_pEditor);
@@ -130,6 +141,6 @@ void CVirtualMachineWindow::dropEvent(QDropEvent* pEvent)
 {
 	QStringList urls = QString(pEvent->mimeData()->data("text/uri-list")).split("\r\n");
 	urls.pop_back();
-	LoadProgram(urls.back().remove(QRegExp("^file:///")));
+	LoadProgram(urls.back().remove(QRegularExpression("^file:///")));
 	pEvent->accept();
 }

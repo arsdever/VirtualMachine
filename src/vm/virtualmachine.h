@@ -6,10 +6,12 @@
 
 #include <QObject>
 #include <QSet>
+#include <QVector>
 
 class CCPU;
 class CRAM;
 class CDebugger;
+class IIODevice;
 
 class VM_EXPORT CVirtualMachine : public QObject
 {
@@ -32,6 +34,8 @@ public:
 	CDebugger* Debugger() const;
 	void SetDebugger(CDebugger* pDebugger);
 
+	void SetDevice(quint32 port, IIODevice* pDevice);
+
 signals:
 	void NewProgramLoaded(QString const&);
 
@@ -42,6 +46,7 @@ private:
 	QSet<CCPU*> m_setCPU;
 	CRAM* m_pRAM;
 	CDebugger* m_pDebugger;
+	QVector<IIODevice*> m_arrDevices;
 
 public:
 	struct vm_exception : public std::exception {};

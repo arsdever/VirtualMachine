@@ -17,6 +17,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "application", "src\applicat
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vm", "src\vm\vm.vcxproj", "{860C42E1-D3DF-4114-8983-4FA699108517}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "devices", "src\devices\devices.vcxproj", "{3290CC8B-AEFD-48CF-AFCB-4F45719010CD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -51,12 +53,16 @@ Global
 		{860C42E1-D3DF-4114-8983-4FA699108517}.Debug|x64.Build.0 = Debug|x64
 		{860C42E1-D3DF-4114-8983-4FA699108517}.Release|x64.ActiveCfg = Release|x64
 		{860C42E1-D3DF-4114-8983-4FA699108517}.Release|x64.Build.0 = Release|x64
+		{3290CC8B-AEFD-48CF-AFCB-4F45719010CD}.Debug|x64.ActiveCfg = Debug|x64
+		{3290CC8B-AEFD-48CF-AFCB-4F45719010CD}.Debug|x64.Build.0 = Debug|x64
+		{3290CC8B-AEFD-48CF-AFCB-4F45719010CD}.Release|x64.ActiveCfg = Release|x64
+		{3290CC8B-AEFD-48CF-AFCB-4F45719010CD}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		Qt5Version = msvc2017_64
 		SolutionGuid = {AE9D761F-A1B3-4841-98C7-D5EFE9CB2DEF}
+		Qt5Version = msvc2017_64
 	EndGlobalSection
 EndGlobal

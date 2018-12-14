@@ -203,7 +203,7 @@ void CDebugger::SetBreakpoint()
 void CDebugger::OnProgramLoaded(QString const& strNewPath)
 {
 	QString debuggerPath = strNewPath;
-	debuggerPath.replace(QRegExp(".ef$"), QString(".dbg"));
+	debuggerPath.replace(QRegularExpression(".ef$"), QString(".dbg"));
 	CVirtualMachine* pVM = dynamic_cast<CVirtualMachine*>(sender());
 	if (pVM == nullptr)
 		return;

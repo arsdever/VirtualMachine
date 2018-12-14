@@ -35,6 +35,8 @@ CCPU::InstructionMap CCPU::InitMap()
 	map.insert(CCPU::JMPC, QPair<quint8, CCPU::FunctionPointer>(6, &CCPU::JMPC_exec));
 	map.insert(CCPU::INC, QPair<quint8, CCPU::FunctionPointer>(2, &CCPU::INC_exec));
 	map.insert(CCPU::DEC, QPair<quint8, CCPU::FunctionPointer>(2, &CCPU::DEC_exec));
+	map.insert(CCPU::IN, QPair<quint8, CCPU::FunctionPointer>(3, &CCPU::IN_exec));
+	map.insert(CCPU::OUT, QPair<quint8, CCPU::FunctionPointer>(3, &CCPU::OUT_exec));
 	REGISTER_EXECUTER1(NAND, 4)
 	REGISTER_EXECUTER1(ADD, 4)
 	REGISTER_EXECUTER1(SUB, 4)
@@ -74,6 +76,7 @@ void CCPU::Restart()
 	m_sState.SP = m_pRam->GetSize();
 	m_sState.PC = m_pRam->operator[]<quint32>(8);
 	m_sState.RUN = true;
+	m_sState.IN_OUT = SState::None;
 }
 
 void CCPU::Fetch()
@@ -107,6 +110,8 @@ quint8 CCPU::Decode()
 	case CCPU::JMPC:
 	case CCPU::INC:
 	case CCPU::DEC:
+	case CCPU::IN:
+	case CCPU::OUT:
 		m_fptrExecuter = CCPU::s_mapInstructions[opcode].second;
 		return CCPU::s_mapInstructions[opcode].first;
 	}
@@ -140,7 +145,7 @@ CCPU::SState CCPU::GetState() const
 
 void CCPU::Run()
 {
-	while (m_sState.RUN)
+	while (m_sState.RUN && m_sState.IN_OUT == SState::EInOutMode::None)
 	{
 		Step();
 	}
@@ -150,7 +155,7 @@ void CCPU::Run()
 void CCPU::Step()
 {
 	CallFunction<ILogger>(ILogger::InfoFunctor(QString("Running 0x%1").arg(m_sState.PC, 8, 16, QChar('0'))));
-	if (m_sState.RUN && m_sState.FLAGS & SState::IFlag)
+	if (m_sState.RUN && m_sState.IN_OUT == SState::EInOutMode::None && m_sState.FLAGS & SState::IFlag)
 		HandleInterrupt();
 
 	Fetch();
@@ -507,14 +512,14 @@ void CCPU::JMP_exec() {
 
 void CCPU::INC_exec() {
 	if (m_sState.IR[1] & 0x80)
-		++*(quint32*)(m_sState.AR[m_sState.IR[1] & 0x07]);
+		++m_sState.AR[m_sState.IR[1] & 0x07];
 	else
 		++*(quint32*)(m_sState.GR + (m_sState.IR[1] & 0x3F));
 }
 
 void CCPU::DEC_exec() {
 	if (m_sState.IR[1] & 0x80)
-		--*(quint32*)(m_sState.AR[m_sState.IR[1] & 0x07]);
+		--m_sState.AR[m_sState.IR[1] & 0x07];
 	else
 		--*(quint32*)(m_sState.GR + (m_sState.IR[1] & 0x3F));
 }
@@ -541,4 +546,16 @@ void CCPU::NOR_exec() {
 
 template <typename INT_TYPE>
 void CCPU::OR_exec() {
+}
+
+void CCPU::IN_exec()
+{
+
+}
+
+void CCPU::OUT_exec()
+{
+	(quint32&)m_sState.PORTS[m_sState.IR[2]] = (quint32)m_sState.GR[m_sState.IR[1] & 0x3C];
+	m_sState.PORTS[0xffff] = m_sState.IR[2];
+	m_sState.IN_OUT = SState::Output;
 }
