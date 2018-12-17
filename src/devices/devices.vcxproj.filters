@@ -29,20 +29,20 @@
     <ClInclude Include="devices_global.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="console_device.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="device_interface.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="console_device.cpp">
+    <ClCompile Include="console_window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtMoc Include="device_interface.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="console_window.h">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

@@ -122,12 +122,12 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="console_device.h" />
+    <QtMoc Include="console_window.h" />
     <ClInclude Include="devices_global.h" />
     <QtMoc Include="device_interface.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="console_device.cpp" />
+    <ClCompile Include="console_window.cpp" />
     <ClCompile Include="device_interface.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -4,7 +4,6 @@
 #include <assets>
 //#include <debugger>
 #include <ram>
-#include "console_window.h"
 #include <devices>
 
 #include <QLibrary>
@@ -37,10 +36,8 @@ CVirtualMachineWindow::CVirtualMachineWindow(QWidget *parent)
 	InitMenuBar();
 
 	LoadPlugin("debugger");
-	CConsoleDevice* pConsoleDevice = new CConsoleDevice();
 	CConsoleWindow* pConsoleWindow = new CConsoleWindow();
-	pConsoleWindow->SetDevice(pConsoleDevice);
-	m_pVM->SetDevice(0, pConsoleDevice);
+	m_pVM->SetDevice(0, pConsoleWindow->GetDevice());
 	QDockWidget* pConsoleDock = new QDockWidget("Console", this);
 	pConsoleDock->setWidget(pConsoleWindow);
 	pConsoleDock->setFeatures(QDockWidget::DockWidgetFloatable | QDockWidget::DockWidgetMovable);
