@@ -1,7 +1,6 @@
 #include "ar_window.h"
 
 #include <cpu>
-#include <ram>
 
 #include <QLayout>
 #include <QLabel>

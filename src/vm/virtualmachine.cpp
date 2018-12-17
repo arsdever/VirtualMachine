@@ -1,6 +1,5 @@
 #include "virtualmachine.h"
 #include <cpu>
-#include <ram>
 #include <devices>
 
 #include <QFile>
@@ -9,6 +8,7 @@
 CVirtualMachine::CVirtualMachine(quint32 nRamSize, quint32 nCoreCount, QObject* pParent)
 	: QObject(pParent)
 	, m_pRAM(new CRAM(nRamSize))
+	, m_pIOController(new CIOController())
 	, m_arrDevices(0xffff)
 {
 	while (nCoreCount > 0)
@@ -51,7 +51,7 @@ void CVirtualMachine::LoadProgram(QString const& path)
 
 void CVirtualMachine::DeployCPU()
 {
-	CCPU* pCPU = new CCPU(m_pRAM);
+	CCPU* pCPU = new CCPU(m_pRAM, m_pIOController);
 	pCPU->Restart();
 	m_setCPU.insert(pCPU);
 }
@@ -91,6 +91,16 @@ void CVirtualMachine::SetRAM(CRAM* pRAM)
 	m_pRAM = pRAM;
 }
 
+CIOController* CVirtualMachine::IOController() const
+{
+	return m_pIOController;
+}
+
+void CVirtualMachine::SetIOController(CIOController* pIOController)
+{
+	m_pIOController = pIOController;
+}
+
 CDebugger* CVirtualMachine::Debugger() const
 {
 	return m_pDebugger;
@@ -101,33 +111,20 @@ void CVirtualMachine::SetDebugger(CDebugger* pDebugger)
 	m_pDebugger = pDebugger;
 }
 
-void CVirtualMachine::SetDevice(quint32 port, IIODevice * pDevice)
+void CVirtualMachine::SetDevice(IIODevice * pDevice, qint32 nPrefferedPort)
 {
-	if (port > m_arrDevices.size())
-		return;
-
-	m_arrDevices[port] = pDevice;
+	m_pIOController->RegisterDevice(pDevice, nPrefferedPort);
 }
 
 void CVirtualMachine::Run()
 {
 	for (CCPU* pCPU : m_setCPU)
 	{
+		pCPU->Restart();
 		while (pCPU->GetState().RUN)
 		{
 			pCPU->Run();
-			if (pCPU->m_sState.IN_OUT == CCPU::SState::EInOutMode::Output)
-			{
-				quint32 port = pCPU->m_sState.PORTS[0xffff];
-				quint32 mode = pCPU->m_sState.IN_OUT;
-				quint32 data = (quint32)pCPU->m_sState.PORTS[port];
-				m_arrDevices.at(port)->Process(mode, data);
-				pCPU->m_sState.IN_OUT = CCPU::SState::EInOutMode::None;
-				pCPU->m_sState.PORTS[0xffff] = 0xff;
-			}
 		}
-
-		if (!pCPU->m_sState.RUN)
-			QMessageBox::information(nullptr, pCPU->GetUUID(), "Program execution finished.");
+		QMessageBox::information(nullptr, pCPU->GetUUID(), "Program execution finished.");
 	}
 }

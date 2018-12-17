@@ -33,7 +33,7 @@ public:
 	GENERATE_FUNCTOR_1(Core, ILogger, Warning, QString const&)
 	GENERATE_FUNCTOR_1(Core, ILogger, Error, QString const&)
 
-protected:
+public:
 	virtual void Info(QString const&) = 0;
 	virtual void Warning(QString const&) = 0;
 	virtual void Error(QString const&) = 0;
@@ -50,7 +50,7 @@ public:
 	GENERATE_FUNCTOR_1(Core, IVMInformation, UpdateMemoryInformation, CRAM*)
 	GENERATE_FUNCTOR_2(Core, IVMInformation, UpdateCallStack, quint32, CRAM*)
 
-protected:
+public:
 	virtual void UpdateGRegistersInformation(CCPU*) = 0;
 	virtual void UpdateARegistersInformation(CCPU*) = 0;
 	virtual void UpdateMemoryInformation(CRAM*) = 0;
@@ -69,10 +69,22 @@ public:
 	GENERATE_FUNCTOR_1(Core, IDebugger, SetRunningAddress, quint32)
 	GENERATE_FUNCTOR_0(Core, IDebugger, ClearBreakpoints)
 
-protected:
+public:
 	virtual void SetBreakpoint(quint32) = 0;
 	virtual void UnsetBreakpoint(quint32) = 0;
 	virtual void ToggleBreakpoint(quint32) = 0;
 	virtual void SetRunningAddress(quint32) = 0;
 	virtual void ClearBreakpoints() = 0;
+};
+
+class CORE_EXPORT IIODevice : public IUnknown
+{
+public:
+	static const QString UUID;
+	virtual QString const& GetUUID() const override { return UUID; }
+
+public:
+	virtual void In(char&) = 0;
+	virtual void Out(quint32) = 0;
+	virtual void Out(char) = 0;
 };

@@ -7,8 +7,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cpu", "src\cpu\cpu.vcxproj"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "assets", "src\assets\assets.vcxproj", "{13421D7C-0894-41B8-899F-7480195BD43C}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ram", "src\ram\ram.vcxproj", "{5EF3E967-2DCB-4F2F-B6A0-78EBEF746214}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "debugger", "src\debugger\debugger.vcxproj", "{7D607CA3-8A9E-4CC3-AEC5-7BD8584BF99F}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "core", "src\core\core.vcxproj", "{3EF31140-6D38-4155-8EA4-A2B11EBE9124}"
@@ -33,10 +31,6 @@ Global
 		{13421D7C-0894-41B8-899F-7480195BD43C}.Debug|x64.Build.0 = Debug|x64
 		{13421D7C-0894-41B8-899F-7480195BD43C}.Release|x64.ActiveCfg = Release|x64
 		{13421D7C-0894-41B8-899F-7480195BD43C}.Release|x64.Build.0 = Release|x64
-		{5EF3E967-2DCB-4F2F-B6A0-78EBEF746214}.Debug|x64.ActiveCfg = Debug|x64
-		{5EF3E967-2DCB-4F2F-B6A0-78EBEF746214}.Debug|x64.Build.0 = Debug|x64
-		{5EF3E967-2DCB-4F2F-B6A0-78EBEF746214}.Release|x64.ActiveCfg = Release|x64
-		{5EF3E967-2DCB-4F2F-B6A0-78EBEF746214}.Release|x64.Build.0 = Release|x64
 		{7D607CA3-8A9E-4CC3-AEC5-7BD8584BF99F}.Debug|x64.ActiveCfg = Debug|x64
 		{7D607CA3-8A9E-4CC3-AEC5-7BD8584BF99F}.Debug|x64.Build.0 = Debug|x64
 		{7D607CA3-8A9E-4CC3-AEC5-7BD8584BF99F}.Release|x64.ActiveCfg = Release|x64
@@ -62,7 +56,7 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {AE9D761F-A1B3-4841-98C7-D5EFE9CB2DEF}
 		Qt5Version = msvc2017_64
+		SolutionGuid = {AE9D761F-A1B3-4841-98C7-D5EFE9CB2DEF}
 	EndGlobalSection
 EndGlobal

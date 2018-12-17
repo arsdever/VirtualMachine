@@ -24,6 +24,7 @@
 #include <QPair>
 
 class CRAM;
+class CIOController;
 
 class CPU_EXPORT CCPU
 {
@@ -40,19 +41,10 @@ public:
 			IFlag = 32
 		};
 
-		enum EInOutMode
-		{
-			None,
-			Input,
-			Output
-		};
-
 		quint32 PC;
 		quint8 IR[8];
 		quint32 AR[8];
 		quint8 GR[64];
-		quint8 PORTS[0x10000];
-		quint8 IN_OUT;
 		bool RUN;
 		qint32 FLAGS;
 		quint32& SF;
@@ -65,14 +57,11 @@ public:
 			, IR{ 0 }
 			, AR{ 0 }
 			, GR{ 0 }
-			, PORTS{ 0 }
 			, RUN(false)
-			, IN_OUT(EInOutMode::None)
 			, FLAGS((EFlags)0)
 			, SF(AR[0])
 			, SP(AR[1])
 		{
-			PORTS[0xffff] = 0xff;
 		}
 
 		SState(SState const& c)
@@ -102,7 +91,7 @@ public:
 
 
 public:
-	CCPU(CRAM* pRam);
+	CCPU(CRAM* pRam, CIOController* pIOController);
 	CRAM* Ram() const { return m_pRam; }
 	SState GetState() const;
 	QString GetUUID() const;
@@ -158,6 +147,7 @@ public:
 		DIVS,
 		IN,
 		OUT,
+		OUT1,
 
 		CONDOTIONAL = 0x80
 	};
@@ -178,9 +168,9 @@ public:
 		//IFlag = 32
 
 		EQUAL = 0x00,
-		ZERO = EQUAL,
+		NOT_ZERO = EQUAL,
 		NOT_EQUAL = 0x02,
-		NOT_ZERO = NOT_EQUAL,
+		ZERO = NOT_EQUAL,
 		ABOVE = 0x04,
 		NOT_BELOW_OR_EQUAL = ABOVE,
 		ABOVE_OR_EQUAL = 0x08,
@@ -234,6 +224,7 @@ public:
 	void DEC_exec();
 	void IN_exec();
 	void OUT_exec();
+	void OUT1_exec();
 	template <typename INT_TYPE>
 	void NAND_exec();
 	template <typename INT_TYPE>
@@ -271,6 +262,7 @@ public:
 private:
 	FunctionPointer m_fptrExecuter;
 	CRAM* m_pRam;
+	CIOController* m_pController;
 	QString m_strUUID;
 
 public:

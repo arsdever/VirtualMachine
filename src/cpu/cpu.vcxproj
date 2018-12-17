@@ -107,17 +107,23 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="cpu.cpp" />
+    <ClCompile Include="io_controller.cpp" />
+    <ClCompile Include="ram.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <QtMoc Include="cpu.h" />
+    <ClInclude Include="io_controller.h" />
+    <QtMoc Include="ram.h">
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName)\.;$(QTDIR)\include\QtCore;$(sourcedir)include</IncludePath>
+      <Define Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">UNICODE;_UNICODE;WIN32;WIN64;QT_CORE_LIB;CPU_LIB;_WINDLL</Define>
+      <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\GeneratedFiles;.;$(QTDIR)\include;.\GeneratedFiles\$(ConfigurationName)\.;$(QTDIR)\include\QtCore;$(sourcedir)include</IncludePath>
+      <Define Condition="'$(Configuration)|$(Platform)'=='Release|x64'">UNICODE;_UNICODE;WIN32;WIN64;QT_NO_DEBUG;NDEBUG;QT_CORE_LIB;CPU_LIB;_WINDLL</Define>
+    </QtMoc>
+    <ClInclude Include="cpu.h" />
     <ClInclude Include="cpu_global.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\core\core.vcxproj">
       <Project>{3ef31140-6d38-4155-8ea4-a2b11ebe9124}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\ram\ram.vcxproj">
-      <Project>{5ef3e967-2dcb-4f2f-b6a0-78ebef746214}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -1,6 +1,5 @@
 #include "call_stack.h"
 #include <cpu>
-#include <ram>
 #include "disassembler.h"
 
 CCallStackView::CCallStackView(QWidget* pParent)

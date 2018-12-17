@@ -41,6 +41,7 @@ QString GetOperationName(quint8 operation)
 	case CCPU::InstructionCode::DIVS: return "divs";
 	case CCPU::InstructionCode::IN: return "in";
 	case CCPU::InstructionCode::OUT: return "out";
+	case CCPU::InstructionCode::OUT1: return "outch";
 	}
 
 	return "???";
@@ -67,15 +68,15 @@ QString Disassemble(quint8 instruction[8])
 	case CCPU::InstructionCode::NOR:
 	{
 		if ((instruction[1] & CCPU::InstructionComponents::SIZE_MASK) == CCPU::InstructionComponents::BYTE)
-			result += " byte r";
+			result += " byte ";
 		else if ((instruction[1] & CCPU::InstructionComponents::SIZE_MASK) == CCPU::InstructionComponents::WORD)
-			result += " word r";
+			result += " word ";
 		else if ((instruction[1] & CCPU::InstructionComponents::SIZE_MASK) == CCPU::InstructionComponents::DOUBLE_WORD)
-			result += " dword r";
+			result += " dword ";
 		else if ((instruction[1] & CCPU::InstructionComponents::SIZE_MASK) == CCPU::InstructionComponents::QUAD_WORD)
-			result += " qword r";
+			result += " qword ";
 
-		result += QString("%1, %2").arg(instruction[2]).arg((qint32)instruction[3]);
+		result += QString("r%1, r%2").arg(instruction[2]).arg((qint32)instruction[3]);
 		break;
 	}
 	case CCPU::InstructionCode::PUSH:
@@ -151,6 +152,7 @@ QString Disassemble(quint8 instruction[8])
 		break;
 	case CCPU::InstructionCode::IN:
 	case CCPU::InstructionCode::OUT:
+	case CCPU::InstructionCode::OUT1:
 		result += QString(" r%1, %2h")
 			.arg(instruction[1] & 0x3F)
 			.arg(instruction[2], 4, 16, QChar('0'));
@@ -177,10 +179,10 @@ extern "C" DEBUGGER_EXPORT void Disassemble(QString const& file, QString& result
 
 	QByteArray bytes = input.readAll();
 	quint8* data = (quint8*)bytes.data();
-	s_nSymbolTableAddress = (quint32)data[0];
-	s_nDataSectionAddress = (quint32)data[4];
-	s_nCodeSectionAddress = (quint32)data[8];
-	s_nRelocationTableAddress = (quint32)data[12];
+	s_nSymbolTableAddress = *(quint32*)data;
+	s_nDataSectionAddress = *(quint32*)(data + 4);
+	s_nCodeSectionAddress = *(quint32*)(data + 8);
+	s_nRelocationTableAddress = *(quint32*)(data + 12);
 
 	QMap<quint32, QString> map;
 	quint32 pos = s_nRelocationTableAddress;
@@ -192,7 +194,7 @@ extern "C" DEBUGGER_EXPORT void Disassemble(QString const& file, QString& result
 		if (name == "")
 			break;
 
-		map[(quint32)data[pos + name.size() + 1]] = name;
+		map[*(quint32*)(data + pos + name.size() + 1)] = name;
 		pos += name.size() + 5;
 	}
 

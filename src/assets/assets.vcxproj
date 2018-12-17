@@ -115,9 +115,6 @@
     <ProjectReference Include="..\cpu\cpu.vcxproj">
       <Project>{5f87cf09-f9da-4284-ab54-f72149f34b84}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\ram\ram.vcxproj">
-      <Project>{5ef3e967-2dcb-4f2f-b6a0-78ebef746214}</Project>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ar_window.cpp" />

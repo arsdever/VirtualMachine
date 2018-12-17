@@ -22,7 +22,6 @@ public:
 	void InitMenuBar();
 	
 protected:
-	void UpdateStatusBar();
 	void dragEnterEvent(QDragEnterEvent* pEvent) override;
 	void dropEvent(QDropEvent* pEvent) override;
 	

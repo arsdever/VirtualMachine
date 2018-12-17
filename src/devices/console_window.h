@@ -2,36 +2,34 @@
 
 #include "devices_global.h"
 #include <QWidget>
+#include <core>
 #include <devices>
+#include <QTextEdit>
 
-class QTextEdit;
-class QLineEdit;
+class QEventLoop;
 
-class DEVICES_EXPORT CConsoleWindow : public QWidget
+class DEVICES_EXPORT CConsoleWindow : public QTextEdit
 {
 
 	Q_OBJECT
 
-private:
-	class XConsoleDevice : public IIODevice
-	{
-	public:
-		virtual void Process(quint32, quint32) override;
-		friend class CConsoleWindow;
-
-	private:
-		XConsoleDevice(CConsoleWindow* pParent);
-		CConsoleWindow* m_pThis;
-	}* m_pDevice;
+	IMPLEMENT_BEGIN(CConsoleWindow, IODevice)
+		virtual void In(char&) override;
+		virtual void Out(quint32) override;
+		virtual void Out(char) override;
+	IMPLEMENT_END(IODevice)
 
 public:
 	CConsoleWindow(QWidget* pParent = nullptr);
 	~CConsoleWindow();
 
-	IIODevice* GetDevice() const { return m_pDevice; }
+	IIODevice* GetDevice() const { return (IIODevice*)&m_xIODevice; }
+
+protected:
+	void keyPressEvent(QKeyEvent* pEvent) override;
 
 private:
-	QTextEdit* m_pOutput;
-	QLineEdit* m_pInput;
+	char m_cInput;
+	QEventLoop* m_pLoop;
 };
 

@@ -11,6 +11,7 @@
 class CCPU;
 class CRAM;
 class CDebugger;
+class CIOController;
 class IIODevice;
 
 class VM_EXPORT CVirtualMachine : public QObject
@@ -31,10 +32,13 @@ public:
 	CRAM* RAM() const;
 	void SetRAM(CRAM* pRAM);
 
+	CIOController* IOController() const;
+	void SetIOController(CIOController* pIOController);
+
 	CDebugger* Debugger() const;
 	void SetDebugger(CDebugger* pDebugger);
 
-	void SetDevice(quint32 port, IIODevice* pDevice);
+	void SetDevice(IIODevice* pDevice, qint32 nPrefferedPort = -1);
 
 signals:
 	void NewProgramLoaded(QString const&);
@@ -45,6 +49,7 @@ public slots:
 private:
 	QSet<CCPU*> m_setCPU;
 	CRAM* m_pRAM;
+	CIOController* m_pIOController;
 	CDebugger* m_pDebugger;
 	QVector<IIODevice*> m_arrDevices;
 
